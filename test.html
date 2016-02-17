@@ -1,0 +1,10 @@
+<script src="proxy.js"></script>
+
+<script>
+  var object = {a: 123, b: 456};
+  var proxy = new Proxy(object, {
+    get: function(target, prop, proxy) {
+      return target[prop] + 1;
+    }
+  });
+</script>
