@@ -5,6 +5,27 @@
     return;
   }
 
+  /**
+   * DefaultHandlers is a holder for default behavior applied on proxy objects (i.e., untrapped).
+   */
+  class DefaultHelpers {
+    /**
+     * @this {*}
+     */
+    get(prop) {
+      return this[prop];
+    }
+   /**
+    * @this {*}
+    */
+    set(prop, value) {
+      this[prop] = value;
+    }
+  }
+
+  /**
+   * @constructor
+   */
   scope.Proxy = function(target, handler) {
     if (!(target instanceof Object && handler instanceof Object)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
@@ -20,25 +41,16 @@
       }
     }
 
-    // Define master get/setter helpers.
-    var masterGet;
+    // Override default helper behavior if traps were provided.
+    var h = new DefaultHelpers();
     if (handler.get) {
-      masterGet = function(prop) {
+      h.get = function(prop) {
         return handler.get(this, prop, proxy);
       };
-    } else {
-      masterGet = function(prop) {
-        return this[prop];
-      };
     }
-    var masterSet;
     if (handler.set) {
-      masterSet = function(prop, value) {
+      h.set = function(prop, value) {
         handler.set(this, prop, value, proxy);
-      };
-    } else {
-      masterSet = function(prop, value) {
-        this[prop] = value;
       };
     }
 
@@ -47,8 +59,8 @@
       var desc = Object.getOwnPropertyDescriptor(target, prop);
       delete desc.value;
       delete desc.writable;
-      desc.get = masterGet.bind(target, prop);
-      desc.set = masterSet.bind(target, prop);
+      desc.get = h.get.bind(target, prop);
+      desc.set = h.set.bind(target, prop);
       Object.defineProperty(proxy, prop, desc);
     });
 
@@ -66,4 +78,6 @@
     }};
   }
 
+  scope.Proxy['revocable'] = scope.Proxy.revocable;
+  scope['Proxy'] = scope.Proxy;
 })(window);
