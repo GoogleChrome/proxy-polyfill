@@ -30,19 +30,19 @@
     if (!(target instanceof Object && handler instanceof Object)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
-    var proxy = this;
+    let proxy = this;
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful.
-    var valid = {'get': true, 'set': true};
-    for (var k in handler) {
+    let valid = {'get': true, 'set': true};
+    for (let k in handler) {
       if (!valid[k]) {
         throw new TypeError('Proxy polyfill does not support trap \'' + k + '\'');
       }
     }
 
     // Override default helper behavior if traps were provided.
-    var h = new DefaultHelpers();
+    let h = new DefaultHelpers();
     if (handler.get) {
       h.get = function(prop) {
         return handler.get(this, prop, proxy);
@@ -56,7 +56,7 @@
 
     Object.getOwnPropertyNames(target).forEach(function(prop) {
       // TODO(samthor): Probably can ignore some of this. Also, check target writable=false...
-      var desc = Object.getOwnPropertyDescriptor(target, prop);
+      let desc = Object.getOwnPropertyDescriptor(target, prop);
       delete desc.value;
       delete desc.writable;
       desc.get = h.get.bind(target, prop);
