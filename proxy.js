@@ -30,18 +30,31 @@
     if (!(target instanceof Object && handler instanceof Object)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
-    let proxy = this;
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful.
-    let valid = {'get': true, 'set': true};
+    let valid = {'get': true, 'set': true, 'apply': true};
     for (let k in handler) {
       if (!valid[k]) {
         throw new TypeError('Proxy polyfill does not support trap \'' + k + '\'');
       }
     }
 
-    // Override default helper behavior if traps were provided.
+    // Define proxy as this, or a Function (if either it's callable, or apply is set).
+    let proxy = this;
+    if ('apply' in handler) {
+      proxy = function() {
+        // call the handler.apply method: it's irrelevant whether the target was a Function.
+        return handler.apply(target, this, arguments);
+      }
+    } else if (target instanceof Function) {
+      proxy = function() {
+        // since the target was a function (valid), allow it to be called directly.
+        return target.apply(this, arguments);
+      }
+    }
+
+    // Override default get/set behavior if traps were provided.
     let h = new DefaultHelpers();
     if (handler.get) {
       h.get = function(prop) {
@@ -54,9 +67,15 @@
       };
     }
 
-    Object.getOwnPropertyNames(target).forEach(function(prop) {
+    let propertyNames = Object.getOwnPropertyNames(target);
+    propertyNames.forEach(function(prop) {
       // TODO(samthor): Probably can ignore some of this. Also, check target writable=false...
       let desc = Object.getOwnPropertyDescriptor(target, prop);
+      if (!desc.configurable) {
+        // TODO(samthor): For now, ignore non-enumerable properties: this may not be completely right.
+        console.debug('ignoring prop', prop, desc);
+        return;
+      }
       delete desc.value;
       delete desc.writable;
       desc.get = h.get.bind(target, prop);
@@ -68,6 +87,8 @@
     // TODO(samthor): Chrome just silently fails when accessing now-invalid properties.
     Object.seal(target);
     Object.seal(proxy);
+
+    return proxy;  // may no longer be 'this'
   };
 
   scope.Proxy.revocable = function(target, handler) {

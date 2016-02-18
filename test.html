@@ -5,6 +5,13 @@
   var proxy = new Proxy(object, {
     get: function(target, prop, proxy) {
       return target[prop] + 1;
-    }
+    },
+    apply: function(target, thisArg, argumentsList) {
+      console.info("object was called", this, argumentsList);
+    },
   });
+
+  var fn = function() { console.info("I'm the real function!"); }
+  var proxyFn = new Proxy(fn, {});
+  proxyFn();
 </script>
