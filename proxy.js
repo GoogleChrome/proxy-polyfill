@@ -58,16 +58,19 @@
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
     let proxy = this;
+    let isMethod = false;
     if ('apply' in handler) {
       proxy = function() {
         // call the handler.apply method: it's irrelevant whether the target was a Function.
         return handler.apply(target, this, arguments);
       }
+      isMethod = true;
     } else if (target instanceof Function) {
       proxy = function() {
         // since the target was a function (valid), allow it to be called directly.
         return target.apply(this, arguments);
       }
+      isMethod = true;
     }
 
     // Override default get/set behavior if traps were provided.
@@ -85,17 +88,14 @@
 
     let propertyNames = Object.getOwnPropertyNames(target);
     propertyNames.forEach(function(prop) {
-      // TODO(samthor): Probably can ignore some of this. Also, check target writable=false...
-      let desc = Object.getOwnPropertyDescriptor(target, prop);
-      if (!desc.configurable) {
-        // TODO(samthor): For now, ignore non-enumerable properties: this may not be completely right.
-        console.debug('ignoring prop', prop, desc);
-        return;
-      }
-      delete desc.value;
-      delete desc.writable;
+      let real = Object.getOwnPropertyDescriptor(target, prop);
+      let desc = {enumerable: !!real.enumerable};
       desc.get = h.get.bind(target, prop);
       desc.set = h.set.bind(target, prop);
+
+      if (isMethod && prop in proxy) {
+        return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
+      }
       Object.defineProperty(proxy, prop, desc);
     });
 
