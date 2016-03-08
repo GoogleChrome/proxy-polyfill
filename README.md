@@ -1,7 +1,8 @@
-Polyfill for the `Proxy` object.
-See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy).
+This is a polyfill for the `Proxy` object, part of ES6.
+See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
 
-This proxy supports a limited subset of proxy 'traps', and comes with a caveat: it must [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal) any proxied object such that no additional properties can be defined.
+The polyfill supports just a limited subset of proxy 'traps', and comes with a caveat: it invokes [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal)on any proxied object so that no additional properties can be defined.
+The properties of your objects can still change - you're just unable to define new ones. For example, proxying unrestricted dictionaries is not a good use-case for this polyfill.
 
 Currently, the following traps are supported-
 
@@ -10,6 +11,70 @@ Currently, the following traps are supported-
 * apply
 
 This has no external dependencies.
+Skip down to [usage](#usage) to get started.
+
+# Example
+
+The most compelling use case for `Proxy` is to provide change notifications.
+
+```js
+function observe(o, fn) {
+  return new Proxy(o, {
+    set(target, property, value) {
+      fn(property, value);
+      target[property] = value;
+    },
+  })
+}
+
+let x = {'name': 'BB-8'};
+let p = observe(x, function(property, value) { console.info(property, value) });
+p.name = 'BB-9';
+```
+
+This won't notify on changes to sub-objects.
+However, you can extend the example above to generate change notifications for anywhere in an object tree-
+
+```js
+function observe(o, fn) {
+  function buildProxy(prefix, o) {
+    return new Proxy(o, {
+      set(target, property, value) {
+        fn(prefix + property, value);
+        target[property] = value;
+      },
+      get(target, property) {
+        // return a new proxy if possible, prefixed with property name
+        let out = target[property];
+        if (out instanceof Object) {
+          return buildProxy(property + '.', out);
+        }
+        return out;  // primitive, ignore
+      },
+    });
+  }
+
+  return buildProxy('', o);
+}
+
+let x = {'model': {name: 'Falcon'}};
+let p = observe(x, function(property, value) { console.info(property, value) });
+p.model.name = 'Commodore';
+```
+
+## Adding new properties
+
+The following line will fail (with a `TypeError` in strict mode) with the polyfill, as it's unable to intercept new properties-
+
+```js
+p.model.year = 2016;  // error in polyfill
+```
+
+However, you can replace the entire object at once - once you access it again, your code will see the proxied version.
+
+```js
+p.model = {name: 'Falcon', year: 2016};
+```
 
 # Usage
 
@@ -27,5 +92,5 @@ $ bower install proxy-polyfill
 
 ## Supports
 
-The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/).
-It requires `Object.seal` and `Object.defineProperty`.
+The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
+Firefox, Chrome and Edge support `Proxy` natively.
