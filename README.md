@@ -1,7 +1,7 @@
 This is a polyfill for the `Proxy` object, part of ES6.
 See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
 
-The polyfill supports just a limited subset of proxy 'traps', and comes with a caveat: it invokes [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal)on any proxied object so that no additional properties can be defined.
+The polyfill supports just a limited subset of proxy 'traps', and comes with a caveat: it invokes [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal) on any proxied object so that no additional properties can be defined.
 The properties of your objects can still change - you're just unable to define new ones. For example, proxying unrestricted dictionaries is not a good use-case for this polyfill.
 
 Currently, the following traps are supported-
@@ -30,24 +30,25 @@ function observe(o, fn) {
 let x = {'name': 'BB-8'};
 let p = observe(x, function(property, value) { console.info(property, value) });
 p.name = 'BB-9';
+// name BB-9
 ```
 
-This won't notify on changes to sub-objects.
-However, you can extend the example above to generate change notifications for anywhere in an object tree-
+You can extend this to generate change notifications for anywhere in an object tree-
 
 ```js
 function observe(o, fn) {
   function buildProxy(prefix, o) {
     return new Proxy(o, {
       set(target, property, value) {
+        // same as before, but add prefix
         fn(prefix + property, value);
         target[property] = value;
       },
       get(target, property) {
-        // return a new proxy if possible, prefixed with property name
+        // return a new proxy if possible, add to prefix
         let out = target[property];
         if (out instanceof Object) {
-          return buildProxy(property + '.', out);
+          return buildProxy(prefix + property + '.', out);
         }
         return out;  // primitive, ignore
       },
@@ -60,6 +61,7 @@ function observe(o, fn) {
 let x = {'model': {name: 'Falcon'}};
 let p = observe(x, function(property, value) { console.info(property, value) });
 p.model.name = 'Commodore';
+// model.name Commodore
 ```
 
 ## Adding new properties
@@ -74,6 +76,7 @@ However, you can replace the entire object at once - once you access it again, y
 
 ```js
 p.model = {name: 'Falcon', year: 2016};
+// model Object {name: "Falcon", year: 2016}
 ```
 
 # Usage
