@@ -77,7 +77,7 @@
           }
           return target.apply(this, arguments);
         }
-        throw new TypeError('non-function cannot be called');
+        throw new TypeError(usingNew ? 'not a constructor' : 'not a function');
       };
       isMethod = true;
     }

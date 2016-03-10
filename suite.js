@@ -100,6 +100,21 @@ void function() {
         assert(obj.sentinel, 'prototype not configured correctly');
       });
 
+      test('construct/apply assertions', function() {
+        var pc = new impl({}, {construct: function(target, argumentsList) {
+          assert(false, 'should not get here');
+        }});
+        assert.throws(function() {
+          pc();
+        }, TypeError);
+        var pa = new impl({}, {apply: function(target, argumentsList) {
+          assert(false, 'should not get here');
+        }});
+        assert.throws(function() {
+          new pa();
+        }, TypeError);
+      });
+
       test('construct', function() {
         var fn = function(y) {
           this.x = (y || 0);
