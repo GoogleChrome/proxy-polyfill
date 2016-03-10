@@ -109,11 +109,10 @@
     });
 
     // The Proxy polyfill cannot handle adding new properties. Seal the target and proxy.
-    // TODO(samthor): Chrome just silently fails when accessing now-invalid properties.
     Object.seal(target);
     Object.seal(proxy);
 
-    return proxy;  // may no longer be 'this'
+    return proxy;  // nb. if isMethod is true, proxy != this
   };
 
   scope.Proxy.revocable = function(target, handler) {
