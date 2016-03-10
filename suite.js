@@ -142,12 +142,14 @@ void function() {
         assert.isNotFunction(dummy, 'stock proxy is not function');
         assert.throws(function() {
           dummy();
-        });
+        }, TypeError);
 
         var p = new impl(object, {apply: function() {
           // doesn't matter
         }});
         assert.doesNotThrow(function() {
+          // TODO(samthor): Firefox errors on this in native!
+          // It expects the proxied object to actually be a function, unlike Chrome.
           p();
         });
       });
