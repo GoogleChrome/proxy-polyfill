@@ -48,28 +48,37 @@
     }
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
-    // are a bit more careful.
-    let valid = {'get': true, 'set': true, 'apply': true};
-    for (let k in handler) {
+    // are a bit more careful. Copy the internal parts of handler to prevent user changes.
+    let unsafeHandler = handler;
+    handler = {};
+    let valid = {'get': true, 'set': true, 'apply': true, 'construct': true};
+    for (let k in unsafeHandler) {
       if (!valid[k]) {
         throw new TypeError('Proxy polyfill does not support trap \'' + k + '\'');
       }
+      handler[k] = unsafeHandler[k];
     }
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
     let proxy = this;
     let isMethod = false;
-    if ('apply' in handler) {
-      proxy = function() {
-        // call the handler.apply method: it's irrelevant whether the target was a Function.
-        return handler.apply(target, this, arguments);
-      }
-      isMethod = true;
-    } else if (target instanceof Function) {
-      proxy = function() {
-        // since the target was a function (valid), allow it to be called directly.
-        return target.apply(this, arguments);
-      }
+    if ('apply' in handler || 'construct' in handler || target instanceof Function) {
+      proxy = function Proxy() {
+        let usingNew = (this && this.constructor === proxy);
+
+        if (usingNew && 'construct' in handler) {
+          return handler.construct.call(this, target, arguments);
+        } else if (!usingNew && 'apply' in handler) {
+          return handler.apply(target, this, arguments);
+        } else if (target instanceof Function) {
+          // since the target was a function, fallback to calling it directly.
+          if (usingNew) {
+            return new target(arguments);
+          }
+          return target.apply(this, arguments);
+        }
+        throw new TypeError('non-function cannot be called');
+      };
       isMethod = true;
     }
 

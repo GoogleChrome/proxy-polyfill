@@ -88,8 +88,40 @@ void function() {
         assert.equal(3, p());
       });
 
+      // test wrapping a constructor without proxying it
+      test('wrap constructor', function() {
+        var fn = function(y) {
+          this.x = 1;
+        };
+        fn.prototype.sentinel = true;
+
+        var p = new impl(fn, {});
+        var obj = new p();
+        assert(obj.sentinel, 'prototype not configured correctly');
+      });
+
+      test('construct', function() {
+        var fn = function(y) {
+          this.x = (y || 0);
+          return this;
+        };
+        fn.prototype.sentinel = true;
+
+        var p = new impl(fn, {construct: function(target, argumentsList) {
+          return new target((argumentsList[0] || 0) + 10);
+        }});
+
+        var obj = new p(5);
+        assert.equal(obj.x, 15);
+        assert(obj.sentinel);
+
+        var funcObj = p(5);
+        assert.equal(funcObj.x, 5);
+        assert(!funcObj.sentinel, 'apply use should not contain sentinel');
+      });
+
       test('apply on non-function', function() {
-        var object= {};
+        var object = {};
 
         var dummy = new impl(object, {});
         assert.isNotFunction(dummy, 'stock proxy is not function');

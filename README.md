@@ -9,6 +9,7 @@ Currently, the following traps are supported-
 * get
 * set
 * apply
+* construct
 
 This has no external dependencies.
 Skip down to [usage](#usage) to get started.
