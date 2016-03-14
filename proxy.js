@@ -16,31 +16,35 @@
 
 'use strict';
 
+
 (function(scope) {
   if (scope.Proxy) {
     return;
   }
 
   /**
-   * DefaultHandlers is a holder for default behavior applied on proxy objects (i.e., untrapped).
+   * DefaultHelpers is a holder for default behavior applied on proxy objects (i.e., untrapped).
+   * Methods are suffixed with _ as Safari refuses to create raw 'get' and 'set' methods.
    */
   class DefaultHelpers {
     /**
      * @this {*}
      */
-    get(prop) {
+    _get(prop) {
       return this[prop];
     }
    /**
     * @this {*}
     */
-    set(prop, value) {
+    _set(prop, value) {
       this[prop] = value;
     }
   }
 
   /**
    * @constructor
+   * @param {!Object} target
+   * @param {{apply, construct, get, set}} handler
    */
   scope.Proxy = function(target, handler) {
     if (!(target instanceof Object && handler instanceof Object)) {
@@ -50,25 +54,25 @@
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
     let unsafeHandler = handler;
-    handler = {};
-    let valid = {'get': true, 'set': true, 'apply': true, 'construct': true};
+    handler = {'get': null, 'set': null, 'apply': null, 'construct': null};
     for (let k in unsafeHandler) {
-      if (!valid[k]) {
+      if (!(k in handler)) {
         throw new TypeError('Proxy polyfill does not support trap \'' + k + '\'');
       }
       handler[k] = unsafeHandler[k];
     }
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
+    // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
     let proxy = this;
     let isMethod = false;
-    if ('apply' in handler || 'construct' in handler || target instanceof Function) {
+    if (handler.apply || handler['construct'] || target instanceof Function) {
       proxy = function Proxy() {
         let usingNew = (this && this.constructor === proxy);
 
-        if (usingNew && 'construct' in handler) {
-          return handler.construct.call(this, target, arguments);
-        } else if (!usingNew && 'apply' in handler) {
+        if (usingNew && handler['construct']) {
+          return handler['construct'].call(this, target, arguments);
+        } else if (!usingNew && handler.apply) {
           return handler.apply(target, this, arguments);
         } else if (target instanceof Function) {
           // since the target was a function, fallback to calling it directly.
@@ -85,12 +89,12 @@
     // Override default get/set behavior if traps were provided.
     let h = new DefaultHelpers();
     if (handler.get) {
-      h.get = function(prop) {
+      h._get = function(prop) {
         return handler.get(this, prop, proxy);
       };
     }
     if (handler.set) {
-      h.set = function(prop, value) {
+      h._set = function(prop, value) {
         handler.set(this, prop, value, proxy);
       };
     }
@@ -99,8 +103,8 @@
     propertyNames.forEach(function(prop) {
       let real = Object.getOwnPropertyDescriptor(target, prop);
       let desc = {enumerable: !!real.enumerable};
-      desc.get = h.get.bind(target, prop);
-      desc.set = h.set.bind(target, prop);
+      desc.get = h._get.bind(target, prop);
+      desc.set = h._set.bind(target, prop);
 
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
