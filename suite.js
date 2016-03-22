@@ -135,6 +135,19 @@ void function() {
         assert(!funcObj.sentinel, 'apply use should not contain sentinel');
       });
 
+      test('proxy without construct handler passes arguments', function() {
+        var cls = function(x, y) {
+          assert(this instanceof cls, 'cls prototype is not set correctly');
+          this.x = x;
+          this.y = y;
+        };
+
+        var p = new impl(cls, {});
+        var x = new p(1, 2);
+        assert.equal(x.x, 1);
+        assert.equal(x.y, 2);
+      });
+
       test('apply on non-function', function() {
         var object = {};
 

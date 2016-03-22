@@ -77,7 +77,11 @@
         } else if (target instanceof Function) {
           // since the target was a function, fallback to calling it directly.
           if (usingNew) {
-            return new target(arguments);
+            // inspired by answers to https://stackoverflow.com/q/1606797
+            var all = Array.prototype.slice.call(arguments);
+            all.unshift(target);  // pass class as first arg to constructor
+            var f = target.bind.apply(target, all);
+            return new f();
           }
           return target.apply(this, arguments);
         }
