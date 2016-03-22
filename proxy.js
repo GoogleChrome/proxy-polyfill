@@ -21,25 +21,7 @@
   if (scope.Proxy) {
     return;
   }
-
-  /**
-   * DefaultHelpers is a holder for default behavior applied on proxy objects (i.e., untrapped).
-   * Methods are suffixed with _ as Safari refuses to create raw 'get' and 'set' methods.
-   */
-  class DefaultHelpers {
-    /**
-     * @this {*}
-     */
-    _get(prop) {
-      return this[prop];
-    }
-   /**
-    * @this {*}
-    */
-    _set(prop, value) {
-      this[prop] = value;
-    }
-  }
+  let lastRevokeFn = null;
 
   /**
    * @constructor
@@ -51,13 +33,23 @@
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
 
+    // Construct revoke function, and set lastRevokeFn so that Proxy.revocable can steal it.
+    // The caller might get the wrong revoke function if a user replaces or wraps scope.Proxy
+    // to call itself, but that seems unlikely especially when using the polyfill.
+    let throwRevoked = function() {};
+    lastRevokeFn = function() {
+      throwRevoked = function(trap) {
+        throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
+      };
+    };
+
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
     let unsafeHandler = handler;
     handler = {'get': null, 'set': null, 'apply': null, 'construct': null};
     for (let k in unsafeHandler) {
       if (!(k in handler)) {
-        throw new TypeError('Proxy polyfill does not support trap \'' + k + '\'');
+        throw new TypeError(`Proxy polyfill does not support trap '${k}'`);
       }
       handler[k] = unsafeHandler[k];
     }
@@ -69,6 +61,7 @@
     if (handler.apply || handler['construct'] || target instanceof Function) {
       proxy = function Proxy() {
         let usingNew = (this && this.constructor === proxy);
+        throwRevoked(usingNew ? 'construct' : 'apply');
 
         if (usingNew && handler['construct']) {
           return handler['construct'].call(this, target, arguments);
@@ -91,25 +84,29 @@
       isMethod = true;
     }
 
-    // Override default get/set behavior if traps were provided.
-    let h = new DefaultHelpers();
-    if (handler.get) {
-      h._get = function(prop) {
-        return handler.get(this, prop, proxy);
-      };
-    }
-    if (handler.set) {
-      h._set = function(prop, value) {
-        handler.set(this, prop, value, proxy);
-      };
-    }
+    // Create default getters/setters. Create different code paths as handler.get/handler.set can't
+    // change after creation.
+    let getter = handler.get ? function(prop) {
+      throwRevoked('get');
+      return handler.get(this, prop, proxy);
+    } : function(prop) {
+      throwRevoked('get');
+      return this[prop];
+    };
+    let setter = handler.set ? function(prop, value) {
+      throwRevoked('set');
+      return handler.set(this, prop, value, proxy);
+    } : function(prop, value) {
+      throwRevoked('set');
+      this[prop] = value;
+    };
 
     let propertyNames = Object.getOwnPropertyNames(target);
     propertyNames.forEach(function(prop) {
       let real = Object.getOwnPropertyDescriptor(target, prop);
       let desc = {enumerable: !!real.enumerable};
-      desc.get = h._get.bind(target, prop);
-      desc.set = h._set.bind(target, prop);
+      desc.get = getter.bind(target, prop);
+      desc.set = setter.bind(target, prop);
 
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
@@ -125,11 +122,8 @@
   };
 
   scope.Proxy.revocable = function(target, handler) {
-    return {proxy: new scope.Proxy(target, handler), revoke: function() {
-      // TODO(samthor): Note that calling revoke() cancels all operations on the Proxy object, not
-      // just the ones with traps. It may be infeasible to polyfil.
-      throw new Error('revoke not implemented');
-    }};
+    let p = new scope.Proxy(target, handler);
+    return {proxy: p, revoke: lastRevokeFn};
   }
 
   scope.Proxy['revocable'] = scope.Proxy.revocable;

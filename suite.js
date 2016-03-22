@@ -166,6 +166,41 @@ void function() {
           p();
         });
       });
+
+      test('revocable proxy', function() {
+        var p = impl.revocable({a: 1}, {});
+        p.proxy.a = 2;
+
+        p.revoke();
+        assert.throws(function() {
+          p.proxy.a = 3;
+        }, TypeError, '\'set\'');
+
+        var calls = 0;
+        p = impl.revocable({b: 2}, {get: function(obj, prop) {
+          ++calls;
+          return obj[prop];
+        }});
+        p.proxy.b;
+        p.proxy.b;
+
+        p.revoke();
+        assert.throws(function() {
+          p.proxy.b;
+        }, TypeError, '\'get\'');
+        assert.equal(calls, 2);
+
+        var fn = function() {
+          assert(false, 'should never get here');
+        };
+        p = impl.revocable(fn, {apply: function() {
+          // doesn't matter
+        }});
+        p.revoke();
+        assert.throws(function() {
+          p.proxy();
+        }, TypeError, '\'apply\'');
+      });
     });
   }
 
