@@ -11,6 +11,8 @@ Currently, the following traps are supported-
 * apply
 * construct
 
+The `Proxy.revocable` [method](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/revocable) is also supported, but only for calls to the above traps.
+
 This has no external dependencies.
 Skip down to [usage](#usage) to get started.
 
