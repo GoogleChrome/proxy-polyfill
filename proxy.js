@@ -78,9 +78,10 @@
           // since the target was a function, fallback to calling it directly.
           if (usingNew) {
             // inspired by answers to https://stackoverflow.com/q/1606797
-            var all = Array.prototype.slice.call(arguments);
-            all.unshift(target);  // pass class as first arg to constructor
-            var f = target.bind.apply(target, all);
+            let all = Array.prototype.slice.call(arguments);
+            all.unshift(target);  // pass class as first arg to constructor, although irrelevant
+            // nb. cast to convince Closure compiler that this is a constructor
+            let f = /** @type {!Function} */ (target.bind.apply(target, all));
             return new f();
           }
           return target.apply(this, arguments);
