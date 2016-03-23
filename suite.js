@@ -174,7 +174,7 @@ void function() {
         p.revoke();
         assert.throws(function() {
           p.proxy.a = 3;
-        }, TypeError, '\'set\'');
+        }, TypeError);
 
         var calls = 0;
         p = impl.revocable({b: 2}, {get: function(obj, prop) {
@@ -187,7 +187,7 @@ void function() {
         p.revoke();
         assert.throws(function() {
           p.proxy.b;
-        }, TypeError, '\'get\'');
+        }, TypeError);
         assert.equal(calls, 2);
 
         var fn = function() {
@@ -199,7 +199,7 @@ void function() {
         p.revoke();
         assert.throws(function() {
           p.proxy();
-        }, TypeError, '\'apply\'');
+        }, TypeError);
       });
     });
   }
