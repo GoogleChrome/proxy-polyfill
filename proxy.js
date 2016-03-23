@@ -123,8 +123,8 @@
 
   scope.Proxy.revocable = function(target, handler) {
     let p = new scope.Proxy(target, handler);
-    return {proxy: p, revoke: lastRevokeFn};
-  }
+    return {'proxy': p, 'revoke': lastRevokeFn};
+  };
 
   scope.Proxy['revocable'] = scope.Proxy.revocable;
   scope['Proxy'] = scope.Proxy;
