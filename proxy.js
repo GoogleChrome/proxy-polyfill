@@ -24,12 +24,20 @@
   let lastRevokeFn = null;
 
   /**
+   * @param {*} o
+   * @return {boolean} whether this is probably a (non-null) Object
+   */
+  function isObject(o) {
+    return o ? (typeof o == 'object' || typeof o == 'function') : false;
+  }
+
+  /**
    * @constructor
    * @param {!Object} target
    * @param {{apply, construct, get, set}} handler
    */
   scope.Proxy = function(target, handler) {
-    if (!(target instanceof Object && handler instanceof Object)) {
+    if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
 
@@ -58,7 +66,8 @@
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
     let proxy = this;
     let isMethod = false;
-    if (handler.apply || handler['construct'] || target instanceof Function) {
+    let targetIsFunction = typeof target == 'function';
+    if (handler.apply || handler['construct'] || targetIsFunction) {
       proxy = function Proxy() {
         let usingNew = (this && this.constructor === proxy);
         throwRevoked(usingNew ? 'construct' : 'apply');
@@ -67,7 +76,7 @@
           return handler['construct'].call(this, target, arguments);
         } else if (!usingNew && handler.apply) {
           return handler.apply(target, this, arguments);
-        } else if (target instanceof Function) {
+        } else if (targetIsFunction) {
           // since the target was a function, fallback to calling it directly.
           if (usingNew) {
             // inspired by answers to https://stackoverflow.com/q/1606797
