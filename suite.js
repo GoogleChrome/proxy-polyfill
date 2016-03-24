@@ -167,6 +167,20 @@ void function() {
         });
       });
 
+      test('traps function', function() {
+        var real = function(x, y) {
+          return 1;
+        };
+        var p = new impl(real, function(x, y) {
+          assert.equal(this, real);
+          assert.equal(this(), 1);
+          assert.equal(x, undefined);  // arguments aren't passed
+          assert.equal(y, undefined);
+          return 2;
+        });
+        assert.equal(p(3, 4), 2);
+      });
+
       test('revocable proxy', function() {
         var p = impl.revocable({a: 1}, {});
         p.proxy.a = 2;

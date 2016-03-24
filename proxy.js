@@ -61,6 +61,11 @@
       }
       handler[k] = unsafeHandler[k];
     }
+    if (typeof unsafeHandler == 'function') {
+      // Allow handler to be a function (which has an 'apply' method). This matches what is
+      // probably a bug in native versions. It treats the apply call as a trap to be configured.
+      handler.apply = unsafeHandler.apply.bind(unsafeHandler);
+    }
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
