@@ -215,6 +215,57 @@ void function() {
           p.proxy();
         }, TypeError);
       });
+
+      test('proxy instance of class', function() {
+        var cls = function() {
+          this.y = 1;
+        };
+        cls.prototype.x = function() {
+          ++this.y;
+        };
+
+        var inst = new cls();
+        var p = new impl(inst, {});
+        assert('x' in inst, 'inst should have function');
+        assert('x' in p, 'proxy should have function');
+        p.x();
+        assert.equal(p.y, 2);
+      });
+
+      test('trap instance methods', function() {
+        'use strict';
+        var cls = function() {
+          this.y = 1;
+        };
+        cls.prototype.x = function() {};
+
+        var inst = new cls();
+        var found;
+        var p = new impl(inst, {get: function(obj, prop) {
+          assert.equal(obj, inst);
+          found = prop;
+          return obj[prop];
+        }});
+
+        p.x();
+        assert.equal(found, 'x', 'expected get of function');
+
+        // Confirm set method behavior, proxy vs polyfill.
+        var custom = function() { this.y = 2; };
+        var supportSet = true;
+        try {
+          inst.x = custom;
+        } catch (e) {
+          supportSet = false;
+        }
+        p.x();
+        if (supportSet) {  // native
+          assert.equal(inst.x, custom);
+          assert.equal(p.y, 2);
+        } else {  // polyfill
+          assert.equal(p.y, 1);
+        }
+      });
     });
   }
 

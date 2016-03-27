@@ -115,7 +115,9 @@
       this[prop] = value;
     };
 
+    // Clone direct properties (i.e., not part of a prototype).
     let propertyNames = Object.getOwnPropertyNames(target);
+    let propertyMap = {};
     propertyNames.forEach(function(prop) {
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
@@ -127,7 +129,28 @@
         set: setter.bind(target, prop),
       };
       Object.defineProperty(proxy, prop, desc);
+      propertyMap[prop] = true;
     });
+
+    // Set the prototype, or clone all prototype methods (always required if a getter is provided).
+    // TODO(samthor): We don't allow prototype methods to be set. It's (even more) awkward.
+    // An alternative here would be to _just_ clone methods to keep behavior consistent.
+    let prototypeOk = true;
+    if (Object.setPrototypeOf) {
+      Object.setPrototypeOf(proxy, Object.getPrototypeOf(target));
+    } else if (proxy.__proto__) {
+      proxy.__proto__ = target.__proto__;
+    } else {
+      prototypeOk = false;
+    }
+    if (handler.get || !prototypeOk) {
+      for (let k in target) {
+        if (propertyMap[k]) {
+          continue;
+        }
+        Object.defineProperty(proxy, k, {get: getter.bind(target, k)});
+      }
+    }
 
     // The Proxy polyfill cannot handle adding new properties. Seal the target and proxy.
     Object.seal(target);
