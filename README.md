@@ -101,3 +101,16 @@ $ bower install proxy-polyfill
 
 The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
 Firefox, Chrome and Edge support `Proxy` natively.
+
+# Release
+
+Compile code with [Closure Compiler](https://closure-compiler.appspot.com/home).
+
+```
+// ==ClosureCompiler==
+// @compilation_level ADVANCED_OPTIMIZATIONS
+// @output_file_name proxy.min.js
+// ==/ClosureCompiler==
+
+// code here
+```
