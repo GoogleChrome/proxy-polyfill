@@ -14,12 +14,8 @@
  * the License.
  */
 
-
 void function() {
-
-  setup(function() {
-    // TODO
-  });
+  'use strict';
 
   /**
    * @return Test object useful for the polyfill, as objects are sealed after creation.
@@ -56,6 +52,7 @@ void function() {
         var sets = [];
         var p = new impl(testObj, {set: function(obj, prop) {
           sets.push(prop);
+          return true;
         }});
 
         p.value += 1;
@@ -117,8 +114,9 @@ void function() {
 
       test('construct', function() {
         var fn = function(y) {
-          this.x = (y || 0);
-          return this;
+          var me = this || {};  // this won't be set in strict mode, fake it
+          me.x = (y || 0);
+          return me;
         };
         fn.prototype.sentinel = true;
 
@@ -233,7 +231,6 @@ void function() {
       });
 
       test('trap instance methods', function() {
-        'use strict';
         var cls = function() {
           this.y = 1;
         };
