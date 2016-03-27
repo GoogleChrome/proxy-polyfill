@@ -117,14 +117,15 @@
 
     let propertyNames = Object.getOwnPropertyNames(target);
     propertyNames.forEach(function(prop) {
-      let real = Object.getOwnPropertyDescriptor(target, prop);
-      let desc = {enumerable: !!real.enumerable};
-      desc.get = getter.bind(target, prop);
-      desc.set = setter.bind(target, prop);
-
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
+      let real = Object.getOwnPropertyDescriptor(target, prop);
+      let desc = {
+        enumerable: !!real.enumerable,
+        get: getter.bind(target, prop),
+        set: setter.bind(target, prop),
+      };
       Object.defineProperty(proxy, prop, desc);
     });
 
