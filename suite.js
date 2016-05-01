@@ -299,6 +299,11 @@ void function() {
       assert.throws(function() {
         p.push(1);
       }, TypeError);
+
+      // slice is a copy of array
+      var slice = testArray.slice(0, 1);
+      slice.push(2);
+      assert.equal(slice.length, 2);
     });
   });
 
