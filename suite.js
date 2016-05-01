@@ -284,6 +284,21 @@ void function() {
 
       var pp = new Proxy(p, {});
       assert.isSealed(p);
+
+      assert.throws(function() {
+        pp.newProperty = true;
+      }, TypeError);
+    });
+
+    test('seals array', function() {
+      var testArray = [7,8,9];
+      assert.isNotSealed(testArray);
+      var p = new Proxy(testArray, {});
+      assert.isSealed(testArray);
+      assert.isSealed(p, 'proxy should also be sealed');
+      assert.throws(function() {
+        p.push(1);
+      }, TypeError);
     });
   });
 
