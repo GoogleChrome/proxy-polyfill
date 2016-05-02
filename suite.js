@@ -305,6 +305,21 @@ void function() {
       slice.push(2);
       assert.equal(slice.length, 2);
     });
+
+    // nb. Trying to resolve issue #12
+    test('array as property', function() {
+      var testObj = {arr: [1,2,3]};
+      var p = new Proxy(testObj, {get: function(obj, prop) {
+        return obj[prop];  // zero get handler
+      }});
+
+      assert.equal(p.arr.length, 3);
+      p.arr.push(4);
+      assert.equal(p.arr.length, 4);
+
+      p.arr.splice(0,2);
+      assert.equal(p.arr.length, 2);
+    });
   });
 
 }();
