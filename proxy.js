@@ -171,4 +171,4 @@
 
   scope.Proxy['revocable'] = scope.Proxy.revocable;
   scope['Proxy'] = scope.Proxy;
-})(typeof module !== 'undefined' && module.exports ? global : window);
+})(typeof module !== 'undefined' && module['exports'] ? global : window);
