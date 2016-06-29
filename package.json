@@ -1,6 +1,6 @@
 {
   "name": "proxy-polyfill",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Polyfill for the Proxy object",
   "main": "proxy.js",
   "repository": {
