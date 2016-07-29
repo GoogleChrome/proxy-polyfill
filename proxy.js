@@ -171,4 +171,4 @@
 
   scope.Proxy['revocable'] = scope.Proxy.revocable;
   scope['Proxy'] = scope.Proxy;
-})(typeof module !== 'undefined' && module['exports'] ? global : window);
+})(typeof process !== "undefined" && {}.toString.call(process) === "[object process]" ? global : typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope ? self : window);
