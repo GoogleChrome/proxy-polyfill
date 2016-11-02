@@ -103,7 +103,7 @@ If this is imported as a Node module, it will polyfill the global namespace rath
 ## Supports
 
 The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
-Firefox, Chrome and Edge support `Proxy` natively.
+Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
 
 # Release
 
