@@ -2,9 +2,13 @@ This is a polyfill for the `Proxy` object, part of ES6.
 See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
 Unlike other polyfills, this does not require `Object.observe`, [which is deprecated](https://www.google.com/search?q=object.observe+deprecated).
 
-The polyfill supports just a limited subset of proxy 'traps', and comes with a caveat: it invokes [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal) on any proxied object so that no additional properties can be defined.
+The polyfill supports just a limited number of proxy 'traps'.
+It also works by calling [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal) on the object passed to `Proxy`.
+This means that the properties you want to proxy **must be known at creation time**.
+
 Additionally, your objects' prototypes will be snapshotted at the time a proxy is created.
-The properties of your objects can still change - you're just unable to define new ones. For example, proxying unrestricted dictionaries is not a good use-case for this polyfill.
+The properties of your objects can still change - you're just unable to define new ones.
+For example, proxying unrestricted dictionaries is not a good use-case for this polyfill.
 
 Currently, the following traps are supported-
 
