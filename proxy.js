@@ -21,7 +21,7 @@
   if (scope['Proxy']) {
     return;
   }
-  let lastRevokeFn = null;
+  var lastRevokeFn = null;
 
   /**
    * @param {*} o
@@ -44,20 +44,20 @@
     // Construct revoke function, and set lastRevokeFn so that Proxy.revocable can steal it.
     // The caller might get the wrong revoke function if a user replaces or wraps scope.Proxy
     // to call itself, but that seems unlikely especially when using the polyfill.
-    let throwRevoked = function() {};
+    var throwRevoked = function() {};
     lastRevokeFn = function() {
       throwRevoked = function(trap) {
-        throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
+        throw new TypeError('Cannot perform ' + trap + ' on a proxy that has been revoked');
       };
     };
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
-    let unsafeHandler = handler;
+    var unsafeHandler = handler;
     handler = {'get': null, 'set': null, 'apply': null, 'construct': null};
-    for (let k in unsafeHandler) {
+    for (var k in unsafeHandler) {
       if (!(k in handler)) {
-        throw new TypeError(`Proxy polyfill does not support trap '${k}'`);
+        throw new TypeError('Proxy polyfill does not support trap ' + k);
       }
       handler[k] = unsafeHandler[k];
     }
@@ -69,12 +69,12 @@
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
-    let proxy = this;
-    let isMethod = false;
-    let targetIsFunction = typeof target == 'function';
+    var proxy = this;
+    var isMethod = false;
+    var targetIsFunction = typeof target == 'function';
     if (handler.apply || handler['construct'] || targetIsFunction) {
       proxy = function Proxy() {
-        let usingNew = (this && this.constructor === proxy);
+        var usingNew = (this && this.constructor === proxy);
         throwRevoked(usingNew ? 'construct' : 'apply');
 
         if (usingNew && handler['construct']) {
@@ -85,10 +85,10 @@
           // since the target was a function, fallback to calling it directly.
           if (usingNew) {
             // inspired by answers to https://stackoverflow.com/q/1606797
-            let all = Array.prototype.slice.call(arguments);
+            var all = Array.prototype.slice.call(arguments);
             all.unshift(target);  // pass class as first arg to constructor, although irrelevant
             // nb. cast to convince Closure compiler that this is a constructor
-            let f = /** @type {!Function} */ (target.bind.apply(target, all));
+            var f = /** @type {!Function} */ (target.bind.apply(target, all));
             return new f();
           }
           return target.apply(this, arguments);
@@ -100,16 +100,16 @@
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
     // change after creation.
-    let getter = handler.get ? function(prop) {
+    var getter = handler.get ? function(prop) {
       throwRevoked('get');
       return handler.get(this, prop, proxy);
     } : function(prop) {
       throwRevoked('get');
       return this[prop];
     };
-    let setter = handler.set ? function(prop, value) {
+    var setter = handler.set ? function(prop, value) {
       throwRevoked('set');
-      let status = handler.set(this, prop, value, proxy);
+      var status = handler.set(this, prop, value, proxy);
       if (!status) {
         // TODO(samthor): If the calling code is in strict mode, throw TypeError.
         // It's (sometimes) possible to work this out, if this code isn't strict- try to load the
@@ -121,14 +121,14 @@
     };
 
     // Clone direct properties (i.e., not part of a prototype).
-    let propertyNames = Object.getOwnPropertyNames(target);
-    let propertyMap = {};
+    var propertyNames = Object.getOwnPropertyNames(target);
+    var propertyMap = {};
     propertyNames.forEach(function(prop) {
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
-      let real = Object.getOwnPropertyDescriptor(target, prop);
-      let desc = {
+      var real = Object.getOwnPropertyDescriptor(target, prop);
+      var desc = {
         enumerable: !!real.enumerable,
         get: getter.bind(target, prop),
         set: setter.bind(target, prop),
@@ -140,7 +140,7 @@
     // Set the prototype, or clone all prototype methods (always required if a getter is provided).
     // TODO(samthor): We don't allow prototype methods to be set. It's (even more) awkward.
     // An alternative here would be to _just_ clone methods to keep behavior consistent.
-    let prototypeOk = true;
+    var prototypeOk = true;
     if (Object.setPrototypeOf) {
       Object.setPrototypeOf(proxy, Object.getPrototypeOf(target));
     } else if (proxy.__proto__) {
@@ -149,7 +149,7 @@
       prototypeOk = false;
     }
     if (handler.get || !prototypeOk) {
-      for (let k in target) {
+      for (var k in target) {
         if (propertyMap[k]) {
           continue;
         }
@@ -165,7 +165,7 @@
   };
 
   scope.Proxy.revocable = function(target, handler) {
-    let p = new scope.Proxy(target, handler);
+    var p = new scope.Proxy(target, handler);
     return {'proxy': p, 'revoke': lastRevokeFn};
   };
 
