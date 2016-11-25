@@ -110,10 +110,9 @@
     let setter = handler.set ? function(prop, value) {
       throwRevoked('set');
       let status = handler.set(this, prop, value, proxy);
-      if (!status) {
-        // TODO(samthor): If the calling code is in strict mode, throw TypeError.
-        // It's (sometimes) possible to work this out, if this code isn't strict- try to load the
-        // callee, and if it's available, that code is non-strict. However, this isn't exhaustive.
+      let strictMode = (function() { return !this; })();
+      if (!status && strictMode) {
+        throw new TypeError('handler.set: Assignment failed in strict mode');
       }
     } : function(prop, value) {
       throwRevoked('set');
