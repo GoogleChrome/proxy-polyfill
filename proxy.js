@@ -75,23 +75,23 @@
     if (handler.apply || handler['construct'] || targetIsFunction) {
       proxy = function Proxy() {
         let usingNew = (this && this.constructor === proxy);
+        let args = Array.prototype.slice.call(arguments);
         throwRevoked(usingNew ? 'construct' : 'apply');
 
         if (usingNew && handler['construct']) {
-          return handler['construct'].call(this, target, arguments);
+          return handler['construct'].call(this, target, args);
         } else if (!usingNew && handler.apply) {
-          return handler.apply(target, this, arguments);
+          return handler.apply(target, this, args);
         } else if (targetIsFunction) {
           // since the target was a function, fallback to calling it directly.
           if (usingNew) {
             // inspired by answers to https://stackoverflow.com/q/1606797
-            let all = Array.prototype.slice.call(arguments);
-            all.unshift(target);  // pass class as first arg to constructor, although irrelevant
+            args.unshift(target);  // pass class as first arg to constructor, although irrelevant
             // nb. cast to convince Closure compiler that this is a constructor
-            let f = /** @type {!Function} */ (target.bind.apply(target, all));
+            let f = /** @type {!Function} */ (target.bind.apply(target, args));
             return new f();
           }
-          return target.apply(this, arguments);
+          return target.apply(this, args);
         }
         throw new TypeError(usingNew ? 'not a constructor' : 'not a function');
       };
