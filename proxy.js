@@ -53,7 +53,7 @@
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
-    let unsafeHandler = handler;
+    const unsafeHandler = handler;
     handler = {'get': null, 'set': null, 'apply': null, 'construct': null};
     for (let k in unsafeHandler) {
       if (!(k in handler)) {
@@ -71,11 +71,11 @@
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
     let proxy = this;
     let isMethod = false;
-    let targetIsFunction = typeof target == 'function';
+    const targetIsFunction = typeof target == 'function';
     if (handler.apply || handler['construct'] || targetIsFunction) {
       proxy = function Proxy() {
-        let usingNew = (this && this.constructor === proxy);
-        let args = Array.prototype.slice.call(arguments);
+        const usingNew = (this && this.constructor === proxy);
+        const args = Array.prototype.slice.call(arguments);
         throwRevoked(usingNew ? 'construct' : 'apply');
 
         if (usingNew && handler['construct']) {
@@ -88,7 +88,7 @@
             // inspired by answers to https://stackoverflow.com/q/1606797
             args.unshift(target);  // pass class as first arg to constructor, although irrelevant
             // nb. cast to convince Closure compiler that this is a constructor
-            let f = /** @type {!Function} */ (target.bind.apply(target, args));
+            const f = /** @type {!Function} */ (target.bind.apply(target, args));
             return new f();
           }
           return target.apply(this, args);
@@ -100,16 +100,16 @@
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
     // change after creation.
-    let getter = handler.get ? function(prop) {
+    const getter = handler.get ? function(prop) {
       throwRevoked('get');
       return handler.get(this, prop, proxy);
     } : function(prop) {
       throwRevoked('get');
       return this[prop];
     };
-    let setter = handler.set ? function(prop, value) {
+    const setter = handler.set ? function(prop, value) {
       throwRevoked('set');
-      let status = handler.set(this, prop, value, proxy);
+      const status = handler.set(this, prop, value, proxy);
       if (!status) {
         // TODO(samthor): If the calling code is in strict mode, throw TypeError.
         // It's (sometimes) possible to work this out, if this code isn't strict- try to load the
@@ -121,14 +121,14 @@
     };
 
     // Clone direct properties (i.e., not part of a prototype).
-    let propertyNames = Object.getOwnPropertyNames(target);
-    let propertyMap = {};
+    const propertyNames = Object.getOwnPropertyNames(target);
+    const propertyMap = {};
     propertyNames.forEach(function(prop) {
       if (isMethod && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
-      let real = Object.getOwnPropertyDescriptor(target, prop);
-      let desc = {
+      const real = Object.getOwnPropertyDescriptor(target, prop);
+      const desc = {
         enumerable: !!real.enumerable,
         get: getter.bind(target, prop),
         set: setter.bind(target, prop),
@@ -165,7 +165,7 @@
   };
 
   scope.Proxy.revocable = function(target, handler) {
-    let p = new scope.Proxy(target, handler);
+    const p = new scope.Proxy(target, handler);
     return {'proxy': p, 'revoke': lastRevokeFn};
   };
 
