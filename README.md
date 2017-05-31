@@ -90,7 +90,7 @@ p.model = {name: 'Falcon', year: 2016};
 
 # Usage
 
-Include the JavaScript at the start of your page, or include it as a dependency to your build steps.
+Include the JavaScript at the start of your page, as an ES6 module (although browsers that support ES6 modules support `Proxy` natively) or include it as a dependency to your build steps.
 The source is in ES6, but the included, minified version is ES5.
 
 ## Installation
