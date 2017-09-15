@@ -32,8 +32,8 @@ function observe(o, callback) {
     set(target, property, value) {
       callback(property, value);
       target[property] = value;
-    },
-  })
+    }
+  });
 }
 
 const x = {'name': 'BB-8'};
@@ -60,7 +60,7 @@ function observe(o, callback) {
           return buildProxy(prefix + property + '.', out);
         }
         return out;  // primitive, ignore
-      },
+      }
     });
   }
 
