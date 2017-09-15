@@ -27,17 +27,17 @@ Skip down to [usage](#usage) to get started.
 The most compelling use case for `Proxy` is to provide change notifications.
 
 ```js
-function observe(o, fn) {
+function observe(o, callback) {
   return new Proxy(o, {
     set(target, property, value) {
-      fn(property, value);
+      callback(property, value);
       target[property] = value;
     },
   })
 }
 
 const x = {'name': 'BB-8'};
-const p = observe(x, function(property, value) { console.info(property, value) });
+const p = observe(x, (property, value) => console.info(property, value));
 p.name = 'BB-9';
 // name BB-9
 ```
@@ -45,12 +45,12 @@ p.name = 'BB-9';
 You can extend this to generate change notifications for anywhere in an object tree-
 
 ```js
-function observe(o, fn) {
+function observe(o, callback) {
   function buildProxy(prefix, o) {
     return new Proxy(o, {
       set(target, property, value) {
-        // same as before, but add prefix
-        fn(prefix + property, value);
+        // same as above, but add prefix
+        callback(prefix + property, value);
         target[property] = value;
       },
       get(target, property) {
@@ -68,7 +68,7 @@ function observe(o, fn) {
 }
 
 const x = {'model': {name: 'Falcon'}};
-const p = observe(x, function(property, value) { console.info(property, value) });
+const p = observe(x, (property, value) => console.info(property, value));
 p.model.name = 'Commodore';
 // model.name Commodore
 ```
@@ -87,6 +87,8 @@ However, you can replace the entire object at once - once you access it again, y
 p.model = {name: 'Falcon', year: 2016};
 // model Object {name: "Falcon", year: 2016}
 ```
+
+For a similar reason, this polyfill can't proxy `Array` objects very well - but you can replace them all at once.
 
 # Usage
 
