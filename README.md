@@ -33,7 +33,7 @@ function observe(o, callback) {
       callback(property, value);
       target[property] = value;
     },
-  })
+  });
 }
 
 const x = {'name': 'BB-8'};
