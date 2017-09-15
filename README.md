@@ -36,8 +36,8 @@ function observe(o, fn) {
   })
 }
 
-let x = {'name': 'BB-8'};
-let p = observe(x, function(property, value) { console.info(property, value) });
+const x = {'name': 'BB-8'};
+const p = observe(x, function(property, value) { console.info(property, value) });
 p.name = 'BB-9';
 // name BB-9
 ```
@@ -55,7 +55,7 @@ function observe(o, fn) {
       },
       get(target, property) {
         // return a new proxy if possible, add to prefix
-        let out = target[property];
+        const out = target[property];
         if (out instanceof Object) {
           return buildProxy(prefix + property + '.', out);
         }
@@ -67,15 +67,15 @@ function observe(o, fn) {
   return buildProxy('', o);
 }
 
-let x = {'model': {name: 'Falcon'}};
-let p = observe(x, function(property, value) { console.info(property, value) });
+const x = {'model': {name: 'Falcon'}};
+const p = observe(x, function(property, value) { console.info(property, value) });
 p.model.name = 'Commodore';
 // model.name Commodore
 ```
 
 ## Adding new properties
 
-The following line will fail (with a `TypeError` in strict mode) with the polyfill, as it's unable to intercept new properties-
+The following line will fail (with a `TypeError` in strict mode) with the polyfill, as it's unable to intercept _new_ properties-
 
 ```js
 p.model.year = 2016;  // error in polyfill
@@ -107,7 +107,9 @@ If this is imported as a Node module, it will polyfill the global namespace rath
 ## Supports
 
 The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
-Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
+It may work in other non-browser environments too.
+
+Note that Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
 
 # Release
 
