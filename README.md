@@ -1,3 +1,5 @@
+<img src="https://api.travis-ci.org/GoogleChrome/proxy-polyfill.svg?branch=master" />
+
 This is a polyfill for the `Proxy` object, part of ES6.
 See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
 Unlike other polyfills, this does not require `Object.observe`, [which is deprecated](https://www.google.com/search?q=object.observe+deprecated).
