@@ -28,7 +28,7 @@
    * @return {boolean} whether this is probably a (non-null) Object
    */
   function isObject(o) {
-    return o ? (typeof o == 'object' || typeof o == 'function') : false;
+    return o ? (typeof o === 'object' || typeof o === 'function') : false;
   }
 
   /**
@@ -61,7 +61,7 @@
       }
       handler[k] = unsafeHandler[k];
     }
-    if (typeof unsafeHandler == 'function') {
+    if (typeof unsafeHandler === 'function') {
       // Allow handler to be a function (which has an 'apply' method). This matches what is
       // probably a bug in native versions. It treats the apply call as a trap to be configured.
       handler.apply = unsafeHandler.apply.bind(unsafeHandler);
@@ -71,8 +71,7 @@
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
     let proxy = this;
     let isMethod = false;
-    const targetIsFunction = typeof target == 'function';
-    if (handler.apply || handler['construct'] || targetIsFunction) {
+    if (typeof target === 'function') {
       proxy = function Proxy() {
         const usingNew = (this && this.constructor === proxy);
         const args = Array.prototype.slice.call(arguments);
@@ -82,18 +81,17 @@
           return handler['construct'].call(this, target, args);
         } else if (!usingNew && handler.apply) {
           return handler.apply(target, this, args);
-        } else if (targetIsFunction) {
-          // since the target was a function, fallback to calling it directly.
-          if (usingNew) {
-            // inspired by answers to https://stackoverflow.com/q/1606797
-            args.unshift(target);  // pass class as first arg to constructor, although irrelevant
-            // nb. cast to convince Closure compiler that this is a constructor
-            const f = /** @type {!Function} */ (target.bind.apply(target, args));
-            return new f();
-          }
-          return target.apply(this, args);
         }
-        throw new TypeError(usingNew ? 'not a constructor' : 'not a function');
+
+        // since the target was a function, fallback to calling it directly.
+        if (usingNew) {
+          // inspired by answers to https://stackoverflow.com/q/1606797
+          args.unshift(target);  // pass class as first arg to constructor, although irrelevant
+          // nb. cast to convince Closure compiler that this is a constructor
+          const f = /** @type {!Function} */ (target.bind.apply(target, args));
+          return new f();
+        }
+        return target.apply(this, args);
       };
       isMethod = true;
     }
@@ -171,4 +169,4 @@
 
   scope.Proxy['revocable'] = scope.Proxy.revocable;
   scope['Proxy'] = scope.Proxy;
-})(typeof process !== 'undefined' && {}.toString.call(process) == '[object process]' ? global : self);
+})(typeof process !== 'undefined' && {}.toString.call(process) === '[object process]' ? global : self);

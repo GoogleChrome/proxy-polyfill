@@ -14,7 +14,7 @@
  * the License.
  */
 
-void function() {
+void function(scope) {
   'use strict';
 
   /**
@@ -158,11 +158,29 @@ void function() {
         var p = new impl(object, {apply: function() {
           // doesn't matter
         }});
-        assert.doesNotThrow(function() {
-          // TODO(samthor): Firefox errors on this in native!
-          // It expects the proxied object to actually be a function, unlike Chrome.
+        assert.throws(function() {
           p();
         });
+      });
+
+      test('apply', function() {
+        var fauxThis = {};
+
+        var fn = function() {
+          assert(false, 'should not get here');
+        };
+
+        var called = 0;
+        var p = new impl(fn, {apply: function(target, thisArg, argumentsList) {
+          assert.equal(fn, target);
+          assert.equal(fauxThis, thisArg);
+          assert.equal(argumentsList.length, 2);
+          assert.equal(argumentsList[0], 'a');
+          assert.equal(argumentsList[1], 2);
+          ++called;
+        }});
+        p.call(fauxThis, 'a', 2);
+        assert.equal(called, 1);
       });
 
       test('traps function', function() {
@@ -266,9 +284,9 @@ void function() {
     });
   }
 
-  suiteFor(window.Proxy, 'polyfill');
-  if (window.NativeProxy) {
-    suiteFor(window.NativeProxy, 'native');
+  suiteFor(scope.Proxy, 'polyfill');
+  if (scope.NativeProxy) {
+    suiteFor(scope.NativeProxy, 'native');
   }
 
   suite('general polyfill', function() {
@@ -322,4 +340,4 @@ void function() {
     });
   });
 
-}();
+}(typeof process !== 'undefined' && {}.toString.call(process) === '[object process]' ? global : self);
