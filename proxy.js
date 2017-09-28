@@ -21,7 +21,7 @@
   if (scope['Proxy']) {
     return;
   }
-  let lastRevokeFn = null;
+  var lastRevokeFn = null;
 
   /**
    * @param {*} o
