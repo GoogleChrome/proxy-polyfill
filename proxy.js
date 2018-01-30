@@ -71,6 +71,7 @@
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
     let proxy = this;
     let isMethod = false;
+    let isArray = false;
     if (typeof target === 'function') {
       proxy = function Proxy() {
         const usingNew = (this && this.constructor === proxy);
@@ -94,6 +95,9 @@
         return target.apply(this, args);
       };
       isMethod = true;
+    } else if (target instanceof Array) {
+      proxy = [];
+      isArray = true;
     }
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
@@ -122,7 +126,7 @@
     const propertyNames = Object.getOwnPropertyNames(target);
     const propertyMap = {};
     propertyNames.forEach(function(prop) {
-      if (isMethod && prop in proxy) {
+      if ((isMethod || isArray) && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
       const real = Object.getOwnPropertyDescriptor(target, prop);
