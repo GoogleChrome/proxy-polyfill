@@ -14,7 +14,7 @@
  * the License.
  */
 
-void function(scope) {
+module.exports = (testCase) => function(scope) {
   'use strict';
 
   /**

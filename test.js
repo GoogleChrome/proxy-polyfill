@@ -28,5 +28,11 @@ global.assert = chai.assert;
 global.NativeProxy = global.Proxy;
 global.Proxy = undefined;
 
-require('./proxy.js');  // include actual proxy
-require('./suite.js');  // run tests
+const testSuite = require('./suite.js');
+
+require('./src/index.js');  // include actual proxy
+testSuite();  // run tests
+
+global.Proxy = undefined;
+require('./proxy.min.js');  // also, test output
+testSuite();  // run tests
