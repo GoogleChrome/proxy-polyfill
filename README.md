@@ -101,13 +101,13 @@ The source is in ES6, but the included, minified version is ES5.
 ## To consume Proxy as a function
 Require from your app the file `./src/proxy.js`, which exports a proxy polyfill function.
 ```js
-// es6/es2015 imports
-import proxyPolyfill from 'proxy-polyfill/src/proxy';
+// In ES6/ES2015 supporting environments
+import ProxyPolyfill from 'proxy-polyfill/src/proxy';
 
 // CommonJs require
-const proxyPolyfill = require('proxy-polyfill/src/proxy');
+const ProxyPolyfill = require('proxy-polyfill/src/proxy');
 
-const myProxy = new proxyPolyfill(...);
+const myProxy = new ProxyPolyfill(...);
 ```
 
 ## Installation

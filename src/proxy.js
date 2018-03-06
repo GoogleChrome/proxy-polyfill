@@ -16,7 +16,7 @@
 
 module.exports = function proxyPolyfill() {
   let lastRevokeFn = null;
-  let proxyPolyfill;
+  let ProxyPolyfill;
 
   /**
    * @param {*} o
@@ -31,7 +31,7 @@ module.exports = function proxyPolyfill() {
    * @param {!Object} target
    * @param {{apply, construct, get, set}} handler
    */
-  proxyPolyfill = function(target, handler) {
+  ProxyPolyfill = function(target, handler) {
     if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
@@ -68,7 +68,7 @@ module.exports = function proxyPolyfill() {
     let isMethod = false;
     let isArray = false;
     if (typeof target === 'function') {
-      proxy = function proxyPolyfill() {
+      proxy = function ProxyPolyfill() {
         const usingNew = (this && this.constructor === proxy);
         const args = Array.prototype.slice.call(arguments);
         throwRevoked(usingNew ? 'construct' : 'apply');
@@ -107,8 +107,8 @@ module.exports = function proxyPolyfill() {
     const setter = handler.set ? function(prop, value) {
       throwRevoked('set');
       const status = handler.set(this, prop, value, proxy);
+      // TODO(samthor): If the calling code is in strict mode, throw TypeError.
       // if (!status) {
-        // TODO(samthor): If the calling code is in strict mode, throw TypeError.
         // It's (sometimes) possible to work this out, if this code isn't strict- try to load the
         // callee, and if it's available, that code is non-strict. However, this isn't exhaustive.
       // }
@@ -161,10 +161,10 @@ module.exports = function proxyPolyfill() {
     return proxy;  // nb. if isMethod is true, proxy != this
   };
 
-  proxyPolyfill.revocable = function(target, handler) {
-    const p = new proxyPolyfill(target, handler);
+  ProxyPolyfill.revocable = function(target, handler) {
+    const p = new ProxyPolyfill(target, handler);
     return { 'proxy': p, 'revoke': lastRevokeFn };
   };
 
-  return proxyPolyfill;
+  return ProxyPolyfill;
 }
