@@ -94,8 +94,21 @@ For a similar reason, this polyfill can't proxy `Array` objects very well - but 
 
 # Usage
 
+## To assign Proxy to the global object:
 Include the JavaScript at the start of your page, as an ES6 module (although browsers that support ES6 modules support `Proxy` natively) or include it as a dependency to your build steps.
 The source is in ES6, but the included, minified version is ES5.
+
+## To consume Proxy as a function
+Require from your app the file `./src/proxy.js`, which exports a proxy polyfill function.
+```js
+// In ES6/ES2015 supporting environments
+import ProxyPolyfill from 'proxy-polyfill/src/proxy';
+
+// CommonJs require
+const ProxyPolyfill = require('proxy-polyfill/src/proxy');
+
+const myProxy = new ProxyPolyfill(...);
+```
 
 ## Installation
 
@@ -117,13 +130,7 @@ Note that Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
 
 # Release
 
-Compile code with [Closure Compiler](https://closure-compiler.appspot.com/home).
-
-```
-// ==ClosureCompiler==
-// @compilation_level ADVANCED_OPTIMIZATIONS
-// @output_file_name proxy.min.js
-// ==/ClosureCompiler==
-
-// code here
+Run
+```bash
+$ npm run build
 ```

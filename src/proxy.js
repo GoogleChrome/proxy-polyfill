@@ -14,14 +14,9 @@
  * the License.
  */
 
-'use strict';
-
-
-(function(scope) {
-  if (scope['Proxy']) {
-    return;
-  }
+module.exports = function proxyPolyfill() {
   let lastRevokeFn = null;
+  let ProxyPolyfill;
 
   /**
    * @param {*} o
@@ -36,7 +31,7 @@
    * @param {!Object} target
    * @param {{apply, construct, get, set}} handler
    */
-  scope.Proxy = function(target, handler) {
+  ProxyPolyfill = function(target, handler) {
     if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
@@ -54,7 +49,7 @@
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
     const unsafeHandler = handler;
-    handler = {'get': null, 'set': null, 'apply': null, 'construct': null};
+    handler = { 'get': null, 'set': null, 'apply': null, 'construct': null };
     for (let k in unsafeHandler) {
       if (!(k in handler)) {
         throw new TypeError(`Proxy polyfill does not support trap '${k}'`);
@@ -73,7 +68,7 @@
     let isMethod = false;
     let isArray = false;
     if (typeof target === 'function') {
-      proxy = function Proxy() {
+      proxy = function ProxyPolyfill() {
         const usingNew = (this && this.constructor === proxy);
         const args = Array.prototype.slice.call(arguments);
         throwRevoked(usingNew ? 'construct' : 'apply');
@@ -112,11 +107,11 @@
     const setter = handler.set ? function(prop, value) {
       throwRevoked('set');
       const status = handler.set(this, prop, value, proxy);
-      if (!status) {
-        // TODO(samthor): If the calling code is in strict mode, throw TypeError.
+      // TODO(samthor): If the calling code is in strict mode, throw TypeError.
+      // if (!status) {
         // It's (sometimes) possible to work this out, if this code isn't strict- try to load the
         // callee, and if it's available, that code is non-strict. However, this isn't exhaustive.
-      }
+      // }
     } : function(prop, value) {
       throwRevoked('set');
       this[prop] = value;
@@ -155,7 +150,7 @@
         if (propertyMap[k]) {
           continue;
         }
-        Object.defineProperty(proxy, k, {get: getter.bind(target, k)});
+        Object.defineProperty(proxy, k, { get: getter.bind(target, k) });
       }
     }
 
@@ -166,11 +161,10 @@
     return proxy;  // nb. if isMethod is true, proxy != this
   };
 
-  scope.Proxy.revocable = function(target, handler) {
-    const p = new scope.Proxy(target, handler);
-    return {'proxy': p, 'revoke': lastRevokeFn};
+  ProxyPolyfill.revocable = function(target, handler) {
+    const p = new ProxyPolyfill(target, handler);
+    return { 'proxy': p, 'revoke': lastRevokeFn };
   };
 
-  scope.Proxy['revocable'] = scope.Proxy.revocable;
-  scope['Proxy'] = scope.Proxy;
-})(typeof process !== 'undefined' && {}.toString.call(process) === '[object process]' ? global : self);
+  return ProxyPolyfill;
+}
