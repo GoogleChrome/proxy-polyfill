@@ -23,7 +23,6 @@
     "chai": "^4.1.2",
     "mocha": "^3.5.3",
     "google-closure-compiler": "^20180204.0.0"
-
   },
   "scripts": {
     "build": "node build.js",

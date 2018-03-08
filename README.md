@@ -94,19 +94,23 @@ For a similar reason, this polyfill can't proxy `Array` objects very well - but 
 
 # Usage
 
-## To assign Proxy to the global object:
+## To assign Proxy to the global object
+
 Include the JavaScript at the start of your page, as an ES6 module (although browsers that support ES6 modules support `Proxy` natively) or include it as a dependency to your build steps.
 The source is in ES6, but the included, minified version is ES5.
 
 ## To consume Proxy as a function
-Require from your app the file `./src/proxy.js`, which exports a proxy polyfill function.
-```js
-// In ES6/ES2015 supporting environments
-import ProxyPolyfill from 'proxy-polyfill/src/proxy';
 
-// CommonJs require
+Require from your app the file `./src/proxy.js`, which exports a proxy polyfill functionvian commonJS.
+
+```js
+// commonJS require
 const ProxyPolyfill = require('proxy-polyfill/src/proxy');
 
+// Your environment may also support transparent rewriting of commonJS to ES6:
+import ProxyPolyfill from 'proxy-polyfill/src/proxy';
+
+// Then use...
 const myProxy = new ProxyPolyfill(...);
 ```
 
@@ -120,6 +124,7 @@ $ bower install proxy-polyfill
 ```
 
 If this is imported as a Node module, it will polyfill the global namespace rather than returning the `Proxy` object.
+If you'd like to just get the polyfill'ed version, use the require statement as above.
 
 ## Supports
 
