@@ -22,4 +22,11 @@
   }
   scope.Proxy = require('./proxy.js')();
   scope.Proxy['revocable'] = scope.Proxy.revocable;
-})("undefined" !== typeof process && "[object process]" === {}.toString.call(process) ? global : self);
+})(
+  ('undefined' !== typeof process &&
+    '[object process]' === {}.toString.call(process)) ||
+  ('undefined' !== typeof navigator && navigator.product === 'ReactNative')
+    ? global
+    : self
+);
+
