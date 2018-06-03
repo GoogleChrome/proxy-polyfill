@@ -1,8 +1,10 @@
 {
   "name": "proxy-polyfill",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Polyfill for the Proxy object",
-  "main": "./src/index.js",
+  "main": "proxy.min.js",
+  "module": "./src/index.js",
+  "jsnext:main": "./src/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GoogleChrome/proxy-polyfill.git"
