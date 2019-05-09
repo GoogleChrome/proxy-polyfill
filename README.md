@@ -108,7 +108,8 @@ Require from your app the file `./src/proxy.js`, which exports a proxy polyfill 
 const ProxyPolyfill = require('proxy-polyfill/src/proxy');
 
 // Your environment may also support transparent rewriting of commonJS to ES6:
-import ProxyPolyfill from 'proxy-polyfill/src/proxy';
+import ProxyPolyfillFunction from 'proxy-polyfill/src/proxy';
+const ProxyPolyfill = ProxyPolyfillFunction();
 
 // Then use...
 const myProxy = new ProxyPolyfill(...);
