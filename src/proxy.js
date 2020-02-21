@@ -76,7 +76,7 @@ module.exports = function proxyPolyfill() {
         if (usingNew && handler['construct']) {
           return handler['construct'].call(this, target, args);
         } else if (!usingNew && handler.apply) {
-          return handler.apply(target, this, args);
+          return handler['apply'](target, this, args);
         }
 
         // since the target was a function, fallback to calling it directly.
