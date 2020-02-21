@@ -15,27 +15,20 @@
 -->
 <!DOCTYPE html>
 <meta charset="UTF-8" />
-<link rel="stylesheet" href="bower_components/mocha/mocha.css" />
-<script src="bower_components/mocha/mocha.js"></script>
-<script src="bower_components/chai/chai.js"></script>
+<link rel="stylesheet" href="node_modules/mocha/mocha.css" />
+<script src="node_modules/mocha/mocha.js"></script>
+<script src="node_modules/chai/chai.js"></script>
 <script>
   window.NativeProxy = window.Proxy;
   if (window.NativeProxy) {
     window.Proxy = null;
   }
 
-  // import proxy.js where ES6 supported; proxy.min.js otherwise
-  var es6support = false;
-  try {
-    eval('let x = 1');
-    es6support = true;
-  } catch (e) {
-    // ignore
-    console.warn('running tests in es5/compiled mode');
-  }
-  var s = document.createElement('script');
-  s.src = es6support ? 'proxy.js' : 'proxy.min.js';
-  document.write(s.outerHTML);
+  window.module = {};
+</script>
+<script src="src/proxy.js"></script>
+<script>
+  window.Proxy = module.exports();  // lazy 'pretend-to-be-node'
 </script>
 <script>
 
@@ -64,3 +57,6 @@ mocha.setup({ ui: 'tdd' });
 </script>
 <div id="mocha"></div>
 <script src="suite.js"></script>
+<script>
+  module.exports();  // lazy 'pretend-to-be-node' to setup tests
+</script>
