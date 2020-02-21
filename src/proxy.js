@@ -41,10 +41,15 @@ module.exports = function proxyPolyfill() {
     // to call itself, but that seems unlikely especially when using the polyfill.
     let throwRevoked = function() {};
     lastRevokeFn = function() {
+      /** @suppress {checkTypes} */
+      target = null;  // clear ref
       throwRevoked = function(trap) {
         throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
       };
     };
+    setTimeout(function() {
+      lastRevokeFn = null;
+    }, 0);
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
