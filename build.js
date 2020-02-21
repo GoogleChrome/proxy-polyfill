@@ -23,7 +23,7 @@ const closureCompiler = new ClosureCompiler({
   language_in: 'ECMASCRIPT6_STRICT',
   language_out: 'ECMASCRIPT5',
   compilation_level: 'ADVANCED_OPTIMIZATIONS',
-  dependency_mode: 'STRICT',
+//  dependency_mode: 'STRICT',
   warning_level: 'VERBOSE',
   process_common_js_modules: true,
   output_wrapper: '(function(){%output%})()', // this prevents closure compiler from polluting the global scope
