@@ -14,7 +14,7 @@
  * the License.
  */
 
-module.exports = (testCase) => function(scope) {
+module.exports = () => function(scope) {
   'use strict';
 
   /**
@@ -246,6 +246,28 @@ module.exports = (testCase) => function(scope) {
         assert('x' in p, 'proxy should have function');
         p.x();
         assert.equal(p.y, 2);
+      });
+
+      test('proxy class with inline props', function() {
+        class Foo {
+          foo = "bar";
+        }
+
+        var called = [];
+
+        var inst = new Foo();
+        var p = new impl(inst, {
+          set(target, property, value) {
+            target[property] = value;
+            called.push(property);
+            return true;
+          },
+        });
+        assert('foo' in inst, 'inst should have prop');
+        assert('foo' in p, 'proxy should have prop');
+        p.foo = "que";
+        assert.equal(inst.foo, "que");
+        assert.sameMembers(called, ['foo'], 'should be called with "foo"');
       });
 
       test('trap instance methods', function() {
