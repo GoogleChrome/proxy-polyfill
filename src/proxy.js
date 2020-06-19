@@ -26,12 +26,53 @@ module.exports = function proxyPolyfill() {
     return o ? (typeof o === 'object' || typeof o === 'function') : false;
   }
 
+  const $Object = Object;
+
+  let hasProto = true;
+  const objectCreate =
+    $Object.create ||
+    ((hasProto = !({ __proto__: null } instanceof $Object))
+      ? function create(proto) {
+          if (proto !== null && !isObject(proto)) {
+            throw new TypeError('Object prototype may only be an Object or null: ' + proto);
+          }
+
+          return { __proto__: proto };
+        }
+      : function create(proto) {
+        if (proto !== null && !isObject(proto)) {
+          throw new TypeError('Object prototype may only be an Object or null: ' + proto);
+        }
+
+        if (proto === null) {
+          throw new SyntaxError('Native Object.create is required to create objects with null prototype');
+        }
+
+        // nb. cast to convince Closure compiler that this is a constructor
+        var T = /** @type {!Function} */ (function T() {});
+        T.prototype = proto;
+        return new T();
+      });
+
+  const getProto =
+    $Object.getPrototypeOf ||
+    ([].__proto__ === Array.prototype
+      ? function getPrototypeOf(O) {
+          return O.__proto__;
+        }
+      : null);
+
   /**
    * @constructor
    * @param {!Object} target
    * @param {{apply, construct, get, set}} handler
    */
   ProxyPolyfill = function(target, handler) {
+    const newTarget = this && this instanceof ProxyPolyfill ? this.constructor : undefined;
+    if (newTarget === undefined) {
+      throw new TypeError("Constructor Proxy requires 'new'");
+    }
+
     if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
@@ -69,7 +110,8 @@ module.exports = function proxyPolyfill() {
 
     // Define proxy as this, or a Function (if either it's callable, or apply is set).
     // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
-    let proxy = this;
+    let proto = getProto ? getProto(target) : null;
+    let proxy = proto !== null || hasProto ? objectCreate(proto) : {};
     let isMethod = false;
     let isArray = false;
     if (typeof target === 'function') {
@@ -143,12 +185,14 @@ module.exports = function proxyPolyfill() {
     // TODO(samthor): We don't allow prototype methods to be set. It's (even more) awkward.
     // An alternative here would be to _just_ clone methods to keep behavior consistent.
     let prototypeOk = true;
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(proxy, Object.getPrototypeOf(target));
-    } else if (proxy.__proto__) {
-      proxy.__proto__ = target.__proto__;
-    } else {
-      prototypeOk = false;
+    if (isMethod || isArray) {
+      if (Object.setPrototypeOf) {
+        Object.setPrototypeOf(proxy, Object.getPrototypeOf(target));
+      } else if (proxy.__proto__) {
+        proxy.__proto__ = target.__proto__;
+      } else {
+        prototypeOk = false;
+      }
     }
     if (handler.get || !prototypeOk) {
       for (let k in target) {
