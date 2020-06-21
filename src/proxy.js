@@ -32,6 +32,11 @@ module.exports = function proxyPolyfill() {
    * @param {{apply, construct, get, set}} handler
    */
   ProxyPolyfill = function(target, handler) {
+    'use strict';
+    let strictMode = (function() { return !this; })();
+    if (!strictMode) {
+      throw new TypeError('Failed to run in strict mode');
+    }
     if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
