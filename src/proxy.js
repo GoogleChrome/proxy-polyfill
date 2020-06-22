@@ -28,10 +28,10 @@ module.exports = function proxyPolyfill() {
 
   const $Object = Object;
 
-  let hasProto = true;
+  let canCreateNullProtoObjects = true;
   const objectCreate =
     $Object.create ||
-    ((hasProto = !({ __proto__: null } instanceof $Object))
+    ((canCreateNullProtoObjects = !({ __proto__: null } instanceof $Object))
       ? function create(proto) {
           if (proto !== null && !isObject(proto)) {
             throw new TypeError('Object prototype may only be an Object or null: ' + proto);
@@ -108,10 +108,10 @@ module.exports = function proxyPolyfill() {
       handler.apply = unsafeHandler.apply.bind(unsafeHandler);
     }
 
-    // Define proxy as this, or a Function (if either it's callable, or apply is set).
-    // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
-    let proto = getProto ? getProto(target) : null;
-    let proxy = proto !== null || hasProto ? objectCreate(proto) : {};
+    // Define proxy as an object that extends target.[[Prototype]],
+    // or a Function (if either it's callable, or apply is set).
+    const proto = getProto ? getProto(target) : null;
+    let proxy;
     let isMethod = false;
     let isArray = false;
     if (typeof target === 'function') {
@@ -120,6 +120,7 @@ module.exports = function proxyPolyfill() {
         const args = Array.prototype.slice.call(arguments);
         throwRevoked(usingNew ? 'construct' : 'apply');
 
+        // TODO(samthor): Closure compiler doesn't know about 'construct', attempts to rename it.
         if (usingNew && handler['construct']) {
           return handler['construct'].call(this, target, args);
         } else if (!usingNew && handler.apply) {
@@ -140,6 +141,8 @@ module.exports = function proxyPolyfill() {
     } else if (target instanceof Array) {
       proxy = [];
       isArray = true;
+    } else {
+      proxy = proto !== null || canCreateNullProtoObjects ? objectCreate(proto) : {};
     }
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
@@ -187,9 +190,9 @@ module.exports = function proxyPolyfill() {
     let prototypeOk = true;
     if (isMethod || isArray) {
       if (Object.setPrototypeOf) {
-        Object.setPrototypeOf(proxy, Object.getPrototypeOf(target));
+        Object.setPrototypeOf(proxy, proto);
       } else if (proxy.__proto__) {
-        proxy.__proto__ = target.__proto__;
+        proxy.__proto__ = proto;
       } else {
         prototypeOk = false;
       }
