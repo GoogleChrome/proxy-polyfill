@@ -26,39 +26,55 @@ module.exports = function proxyPolyfill() {
     return o ? (typeof o === 'object' || typeof o === 'function') : false;
   }
 
+  function validateProto(proto) {
+    if (proto !== null && !isObject(proto)) {
+      throw new TypeError('Object prototype may only be an Object or null: ' + proto);
+    }
+  }
+
   const $Object = Object;
 
-  let canCreateNullProtoObjects = true;
+  // Closure assumes that `{__proto__: null} instanceof Object` is always true, hence why we check against a different name.
+  const canCreateNullProtoObjects = !!$Object.create || !({ __proto__: null } instanceof $Object);
   const objectCreate =
     $Object.create ||
-    ((canCreateNullProtoObjects = !({ __proto__: null } instanceof $Object))
+    (canCreateNullProtoObjects
       ? function create(proto) {
-          if (proto !== null && !isObject(proto)) {
-            throw new TypeError('Object prototype may only be an Object or null: ' + proto);
-          }
-
+          validateProto(proto);
           return { __proto__: proto };
         }
       : function create(proto) {
-        if (proto !== null && !isObject(proto)) {
-          throw new TypeError('Object prototype may only be an Object or null: ' + proto);
-        }
+          validateProto(proto);
+          if (proto === null) {
+            throw new SyntaxError('Native Object.create is required to create objects with null prototype');
+          }
 
-        if (proto === null) {
-          throw new SyntaxError('Native Object.create is required to create objects with null prototype');
-        }
-
-        // nb. cast to convince Closure compiler that this is a constructor
-        var T = /** @type {!Function} */ (function T() {});
-        T.prototype = proto;
-        return new T();
-      });
+          // nb. cast to convince Closure compiler that this is a constructor
+          var T = /** @type {!Function} */ (function T() {});
+          T.prototype = proto;
+          return new T();
+        });
 
   const getProto =
     $Object.getPrototypeOf ||
     ([].__proto__ === Array.prototype
       ? function getPrototypeOf(O) {
-          return O.__proto__;
+          // If O.[[Prototype]] === null, then the __proto__ accessor won't exist,
+          // as it's inherited from `Object.prototype`
+          const proto = O.__proto__;
+          return isObject(proto) ? proto : null;
+        }
+      : null);
+
+  // Some old engines support Object.getPrototypeOf but not Object.setPrototypeOf,
+  // because Object.setPrototypeOf was standardized later.
+  const setProto =
+    $Object.setPrototypeOf ||
+    ([].__proto__ === Array.prototype
+      ? function setPrototypeOf(O, proto) {
+          validateProto(proto);
+          O.__proto__ = proto;
+          return O;
         }
       : null);
 
@@ -142,7 +158,7 @@ module.exports = function proxyPolyfill() {
       proxy = [];
       isArray = true;
     } else {
-      proxy = proto !== null || canCreateNullProtoObjects ? objectCreate(proto) : {};
+      proxy = canCreateNullProtoObjects || proto !== null ? objectCreate(proto) : {};
     }
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
@@ -168,19 +184,19 @@ module.exports = function proxyPolyfill() {
     };
 
     // Clone direct properties (i.e., not part of a prototype).
-    const propertyNames = Object.getOwnPropertyNames(target);
+    const propertyNames = $Object.getOwnPropertyNames(target);
     const propertyMap = {};
     propertyNames.forEach(function(prop) {
       if ((isMethod || isArray) && prop in proxy) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
-      const real = Object.getOwnPropertyDescriptor(target, prop);
+      const real = $Object.getOwnPropertyDescriptor(target, prop);
       const desc = {
         enumerable: !!real.enumerable,
         get: getter.bind(target, prop),
         set: setter.bind(target, prop),
       };
-      Object.defineProperty(proxy, prop, desc);
+      $Object.defineProperty(proxy, prop, desc);
       propertyMap[prop] = true;
     });
 
@@ -189,10 +205,8 @@ module.exports = function proxyPolyfill() {
     // An alternative here would be to _just_ clone methods to keep behavior consistent.
     let prototypeOk = true;
     if (isMethod || isArray) {
-      if (Object.setPrototypeOf) {
-        Object.setPrototypeOf(proxy, proto);
-      } else if (proxy.__proto__) {
-        proxy.__proto__ = proto;
+      if (setProto && proto !== undefined) {
+        setProto(proxy, proto);
       } else {
         prototypeOk = false;
       }
@@ -202,13 +216,13 @@ module.exports = function proxyPolyfill() {
         if (propertyMap[k]) {
           continue;
         }
-        Object.defineProperty(proxy, k, { get: getter.bind(target, k) });
+        $Object.defineProperty(proxy, k, { get: getter.bind(target, k) });
       }
     }
 
     // The Proxy polyfill cannot handle adding new properties. Seal the target and proxy.
-    Object.seal(target);
-    Object.seal(proxy);
+    $Object.seal(target);
+    $Object.seal(proxy);
 
     return proxy;  // nb. if isMethod is true, proxy != this
   };
