@@ -35,7 +35,7 @@ module.exports = function proxyPolyfill() {
   const $Object = Object;
 
   // Closure assumes that `{__proto__: null} instanceof Object` is always true, hence why we check against a different name.
-  const canCreateNullProtoObjects = !!$Object.create || !({ __proto__: null } instanceof $Object);
+  const canCreateNullProtoObjects = Boolean($Object.create) || !({ __proto__: null } instanceof $Object);
   const objectCreate =
     $Object.create ||
     (canCreateNullProtoObjects
@@ -55,6 +55,8 @@ module.exports = function proxyPolyfill() {
           return new T();
         });
 
+  const noop = function() { return null; };
+
   const getProto =
     $Object.getPrototypeOf ||
     ([].__proto__ === Array.prototype
@@ -64,19 +66,7 @@ module.exports = function proxyPolyfill() {
           const proto = O.__proto__;
           return isObject(proto) ? proto : null;
         }
-      : null);
-
-  // Some old engines support Object.getPrototypeOf but not Object.setPrototypeOf,
-  // because Object.setPrototypeOf was standardized later.
-  const setProto =
-    $Object.setPrototypeOf ||
-    ([].__proto__ === Array.prototype
-      ? function setPrototypeOf(O, proto) {
-          validateProto(proto);
-          O.__proto__ = proto;
-          return O;
-        }
-      : null);
+      : noop);
 
   /**
    * @constructor
@@ -126,7 +116,7 @@ module.exports = function proxyPolyfill() {
 
     // Define proxy as an object that extends target.[[Prototype]],
     // or a Function (if either it's callable, or apply is set).
-    const proto = getProto ? getProto(target) : null;
+    const proto = getProto(target);  // can return null in old browsers
     let proxy;
     let isMethod = false;
     let isArray = false;
@@ -158,7 +148,7 @@ module.exports = function proxyPolyfill() {
       proxy = [];
       isArray = true;
     } else {
-      proxy = canCreateNullProtoObjects || proto !== null ? objectCreate(proto) : {};
+      proxy = (canCreateNullProtoObjects || proto !== null) ? objectCreate(proto) : {};
     }
 
     // Create default getters/setters. Create different code paths as handler.get/handler.set can't
@@ -192,7 +182,7 @@ module.exports = function proxyPolyfill() {
       }
       const real = $Object.getOwnPropertyDescriptor(target, prop);
       const desc = {
-        enumerable: !!real.enumerable,
+        enumerable: Boolean(real.enumerable),
         get: getter.bind(target, prop),
         set: setter.bind(target, prop),
       };
@@ -205,9 +195,19 @@ module.exports = function proxyPolyfill() {
     // An alternative here would be to _just_ clone methods to keep behavior consistent.
     let prototypeOk = true;
     if (isMethod || isArray) {
-      if (setProto && proto !== undefined) {
-        setProto(proxy, proto);
-      } else {
+      // Arrays and methods are special: above, we instantiate boring versions of these then swap
+      // our their prototype later. So we only need to use setPrototypeOf in these cases. Some old
+      // engines support `Object.getPrototypeOf` but not `Object.setPrototypeOf`.
+      const setProto =
+        $Object.setPrototypeOf ||
+        ([].__proto__ === Array.prototype
+          ? function setPrototypeOf(O, proto) {
+              validateProto(proto);
+              O.__proto__ = proto;
+              return O;
+            }
+          : noop);
+      if (!(proto && setProto(proxy, proto))) {
         prototypeOk = false;
       }
     }

@@ -14,6 +14,9 @@
  * the License.
  */
 
+const fs = require('fs');
+const path = require('path');
+
 const ClosureCompiler = require('google-closure-compiler').compiler;
 
 const closureCompiler = new ClosureCompiler({
@@ -27,6 +30,13 @@ const closureCompiler = new ClosureCompiler({
   process_common_js_modules: true,
   output_wrapper: '(function(){%output%})();',  // don't pollute global scope
 });
+
+// FIXME(samthor): There's probably a better way to do this. Avoid Java on macOS.
+const checkNativeMac = path.join(__dirname, 'node_modules/google-closure-compiler-osx/compiler');
+if (fs.existsSync(checkNativeMac)) {
+  closureCompiler.JAR_PATH = undefined;
+  ClosureCompiler.prototype.javaPath = './node_modules/google-closure-compiler-osx/compiler';
+}
 
 const compilerProcess = closureCompiler.run((code, stdout, stderr) => {
   if (stderr) {
