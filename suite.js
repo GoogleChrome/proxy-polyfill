@@ -303,6 +303,32 @@ module.exports = () => function(scope) {
           assert.equal(p.y, 1);
         }
       });
+
+      test('subclass of array', function() {
+        class Foo extends Array {}
+        var f = new Foo(2);
+        f[0] = 'first';
+        f[1] = 'second';
+
+        var p = new impl(f, {get: function(obj, prop) {
+          return obj[prop];
+        }});
+
+        assert.equal(p[0], 'first');
+        assert.equal(p.length, 2);
+        assert.isTrue(p instanceof Array, 'should be instanceof Array');
+
+        if (impl === scope.NativeProxy) {
+          // nb. this fails in NativeProxy
+          assert.throws(function() {
+            p instanceof impl;
+          }, 'Function has non-object prototype', 'cannot instanceof native proxy');
+        } else {
+          assert.isFalse(p instanceof impl, 'should not be instanceof Proxy');
+        }
+
+        assert.equal(Object.getPrototypeOf(p), Object.getPrototypeOf(f));
+      });
     });
   }
 
@@ -312,6 +338,16 @@ module.exports = () => function(scope) {
   }
 
   suite('general polyfill', function() {
+    test('prototypal inheritance', function() {
+      function Foo() {
+      }
+      var f = new Foo();
+      var p = new Proxy(f, {});
+
+      assert.isTrue(p instanceof Foo, 'proxy looks like proxied object');
+      assert.isFalse(p instanceof Proxy, 'proxy does not look like Proxy')
+    });
+
     test('seals object', function() {
       var testObj = buildObject();
       assert.isNotSealed(testObj);
