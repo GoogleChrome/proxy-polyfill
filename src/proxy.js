@@ -15,7 +15,6 @@
  */
 
 module.exports = function proxyPolyfill() {
-  let lastRevokeFn = null;
   let ProxyPolyfill;
 
   /**
@@ -79,24 +78,21 @@ module.exports = function proxyPolyfill() {
       throw new TypeError("Constructor Proxy requires 'new'");
     }
 
+    return ProxyCreate(target, handler);
+  }
+
+  /**
+   * @param {!Object} target
+   * @param {{apply, construct, get, set}} handler
+   * @param {boolean=} allowRevocation
+   */
+  function ProxyCreate(target, handler, allowRevocation) {
     if (!isObject(target) || !isObject(handler)) {
       throw new TypeError('Cannot create proxy with a non-object as target or handler');
     }
 
-    // Construct revoke function, and set lastRevokeFn so that Proxy.revocable can steal it.
-    // The caller might get the wrong revoke function if a user replaces or wraps scope.Proxy
-    // to call itself, but that seems unlikely especially when using the polyfill.
-    let throwRevoked = function() {};
-    lastRevokeFn = function() {
-      /** @suppress {checkTypes} */
-      target = null;  // clear ref
-      throwRevoked = function(trap) {
-        throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
-      };
-    };
-    setTimeout(function() {
-      lastRevokeFn = null;
-    }, 0);
+    /** @param {string} trap */
+    let throwRevoked = function(trap) {};
 
     // Fail on unsupported traps: Chrome doesn't do this, but ensure that users of the polyfill
     // are a bit more careful. Copy the internal parts of handler to prevent user changes.
@@ -121,6 +117,7 @@ module.exports = function proxyPolyfill() {
     let isMethod = false;
     let isArray = false;
     if (typeof target === 'function') {
+      /** @constructor */
       proxy = function ProxyPolyfill() {
         const usingNew = (this && this.constructor === proxy);
         const args = Array.prototype.slice.call(arguments);
@@ -224,12 +221,22 @@ module.exports = function proxyPolyfill() {
     $Object.seal(target);
     $Object.seal(proxy);
 
-    return proxy;  // nb. if isMethod is true, proxy != this
+    return allowRevocation
+      ? {
+        'proxy': proxy,
+        'revoke': function() {
+          /** @suppress {checkTypes} */
+          target = null; // clear ref
+          throwRevoked = function(trap) {
+            throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
+          };
+        }
+      }
+      : proxy;
   };
 
   ProxyPolyfill.revocable = function(target, handler) {
-    const p = new ProxyPolyfill(target, handler);
-    return { 'proxy': p, 'revoke': lastRevokeFn };
+    return ProxyCreate(target, handler, true);
   };
 
   return ProxyPolyfill;
