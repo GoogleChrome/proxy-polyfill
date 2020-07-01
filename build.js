@@ -20,9 +20,9 @@ const path = require('path');
 const ClosureCompiler = require('google-closure-compiler').compiler;
 
 const closureCompiler = new ClosureCompiler({
-  js: './src/*.js',
-  entry_point: './src/index.js',
-  js_output_file: './proxy.min.js',
+  js: path.resolve(__dirname, './src/*.js'),
+  entry_point: path.resolve(__dirname, './src/index.js'),
+  js_output_file: path.resolve(__dirname, './proxy.min.js'),
   language_in: 'ECMASCRIPT6_STRICT',
   language_out: 'ECMASCRIPT5',
   compilation_level: 'ADVANCED_OPTIMIZATIONS',
