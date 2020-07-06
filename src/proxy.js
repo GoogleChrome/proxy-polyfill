@@ -15,7 +15,6 @@
  */
 
 module.exports = function proxyPolyfill() {
-  let ProxyPolyfill;
 
   /**
    * @param {*} o
@@ -54,25 +53,34 @@ module.exports = function proxyPolyfill() {
           return new T();
         });
 
-  const noop = function() { return null; };
+  // This is a fallback function for where we can't even effectively set `.__proto__` (used below
+  // inside the getProto/setProto methods). It's null when the `.__proto__` behavior is supported.
+  const fallbackProtoNoop = ([].__proto__ === Array.prototype) ? null : function() { return null; };
 
   const getProto =
-    $Object.getPrototypeOf ||
-    ([].__proto__ === Array.prototype
-      ? function getPrototypeOf(O) {
-          // If O.[[Prototype]] === null, then the __proto__ accessor won't exist,
-          // as it's inherited from `Object.prototype`
-          const proto = O.__proto__;
-          return isObject(proto) ? proto : null;
-        }
-      : noop);
+    $Object.getPrototypeOf || fallbackProtoNoop || function getPrototypeOf(O) {
+      // If O.[[Prototype]] === null, then the __proto__ accessor won't exist,
+      // as it's inherited from `Object.prototype`
+      const proto = O.__proto__;
+      return isObject(proto) ? proto : null;
+    };
+
+  // We need to define setProto only for when we proxy an Array or function, as these are special
+  // and we need both the caller and the JS runtime to think of these as their real native types.
+  // We check separately as some old engines support `getPrototypeOf` but not `setPrototypeOf`.
+  const setProto =
+    $Object.setPrototypeOf || fallbackProtoNoop || function setPrototypeOf(O, proto) {
+      validateProto(proto);
+      O.__proto__ = proto;
+      return O;
+    };
 
   /**
    * @constructor
    * @param {!Object} target
    * @param {{apply, construct, get, set}} handler
    */
-  ProxyPolyfill = function(target, handler) {
+  const ProxyPolyfill = function(target, handler) {
     const newTarget = this && this instanceof ProxyPolyfill ? this.constructor : undefined;
     if (newTarget === undefined) {
       throw new TypeError("Constructor Proxy requires 'new'");
@@ -192,20 +200,8 @@ module.exports = function proxyPolyfill() {
     // An alternative here would be to _just_ clone methods to keep behavior consistent.
     let prototypeOk = true;
     if (isMethod || isArray) {
-      // Arrays and methods are special: above, we instantiate boring versions of these then swap
-      // our their prototype later. So we only need to use setPrototypeOf in these cases. Some old
-      // engines support `Object.getPrototypeOf` but not `Object.setPrototypeOf`.
-      const setProto =
-        $Object.setPrototypeOf ||
-        ([].__proto__ === Array.prototype
-          ? function setPrototypeOf(O, proto) {
-              validateProto(proto);
-              O.__proto__ = proto;
-              return O;
-            }
-          : noop);
       if (!(proto && setProto(proxy, proto))) {
-        prototypeOk = false;
+        prototypeOk = false;  // this can only really happen in old browsers without __proto__
       }
     }
     if (handler.get || !prototypeOk) {
