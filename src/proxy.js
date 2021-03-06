@@ -100,7 +100,7 @@ module.exports = function proxyPolyfill() {
     handler = { 'get': null, 'set': null, 'apply': null, 'construct': null };
     for (let k in unsafeHandler) {
       if (!(k in handler)) {
-        throw new TypeError(`Proxy polyfill does not support trap '${k}'`);
+        throw new TypeError('Proxy polyfill does not support trap ' + k);
       }
       handler[k] = unsafeHandler[k];
     }
@@ -228,7 +228,7 @@ module.exports = function proxyPolyfill() {
           /** @suppress {checkTypes} */
           target = null; // clear ref
           throwRevoked = function(trap) {
-            throw new TypeError(`Cannot perform '${trap}' on a proxy that has been revoked`);
+            throw new TypeError('Cannot perform ' + trap + ' on a proxy that has been revoked');
           };
         }
       }
