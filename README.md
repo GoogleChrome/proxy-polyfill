@@ -4,6 +4,9 @@ This is a polyfill for the `Proxy` object, part of ES6.
 See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
 Unlike other polyfills, this does not require `Object.observe`, [which is no longer supported anywhere](https://www.google.com/search?q=object.observe+deprecated).
 
+⚠️ Note that Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
+You don't need this if you're only targeting these modern browsers.
+
 The polyfill supports just a limited number of proxy 'traps'.
 It also works by calling [seal](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/seal) on the object passed to `Proxy`.
 This means that the properties you want to proxy **must be known at creation time**.
@@ -98,11 +101,19 @@ Install via your favourite package manager as `proxy-polyfill`.
 
 ## To polyfill Proxy everywhere
 
-You should include `proxy-polyfill` into your build system (just require it directly, it doesn't export anything), or import the `proxy.min.js` file directly.
+You should either:
+
+* include `proxy-polyfill` into your build system (just require it directly, it doesn't export anything), or
+* import the `proxy.min.js` file directly.
+
 This is the recommended approach and works on the web, in Node, or React Native.
+
+**Do not** import `./src/proxy.js` in old browsers directly, as it uses modern JavaScript features.
+It needs to be compiled, which is why we have the `proxy.min.js` file.
 
 ## To consume the polyfill as a function
 
+This is an advanced pattern.
 Requires `./src/proxy.js`, which exports a proxy polyfill _builder_ function in commonJS.
 
 ```js
@@ -121,7 +132,3 @@ const myProxy = new proxyPolyfill(...);
 
 The polyfill supports browsers that implement the full [ES5 spec](https://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
 It may work in other non-browser environments too.
-
-Note that Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
-You don't need this if you're only targeting these modern browsers.
-
