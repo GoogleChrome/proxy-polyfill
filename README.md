@@ -119,7 +119,7 @@ const myProxy = new proxyPolyfill(...);
 
 # Support
 
-The polyfill supports browsers that implement the full [ES5 spec](http://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
+The polyfill supports browsers that implement the full [ES5 spec](https://kangax.github.io/compat-table/es5/), such as IE9+ and Safari 6+.
 It may work in other non-browser environments too.
 
 Note that Firefox, Chrome, Safari 10+ and Edge support `Proxy` natively.
