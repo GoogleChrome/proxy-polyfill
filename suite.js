@@ -270,6 +270,57 @@ module.exports = () => function(scope) {
         assert.sameMembers(called, ['foo'], 'should be called with "foo"');
       });
 
+      test('proxy class with class props', function() {
+        class Foo {
+          _foo = 'bar';
+          get foo() { return this._foo };
+          set foo(v) { this._foo = v };
+        }
+
+        var called = [];
+
+        var inst = new Foo();
+        var p = new impl(inst, {
+          set(target, property, value) {
+            target[property] = value;
+            called.push(property);
+            return true;
+          },
+        });
+        assert('foo' in inst, 'inst should have prop');
+        assert('foo' in p, 'proxy should have prop');
+        p.foo = "que";
+        assert.equal(inst.foo, "que");
+        assert.sameMembers(called, ['foo'], 'should be called with "foo"');
+      });
+
+      test('proxy class with super props', function() {
+        
+        class SuperClass {
+          _foo = 'bar';
+          get foo() { return this._foo };
+          set foo(v) { this._foo = v };
+        }
+        class Foo extends SuperClass {
+        }
+
+        var called = [];
+
+        var inst = new Foo();
+        var p = new impl(inst, {
+          set(target, property, value) {
+            target[property] = value;
+            called.push(property);
+            return true;
+          },
+        });
+        assert('foo' in inst, 'inst should have prop');
+        assert('foo' in p, 'proxy should have prop');
+        p.foo = "que";
+        assert.equal(inst.foo, "que");
+        assert.sameMembers(called, ['foo'], 'should be called with "foo"');
+      });
+
       test('trap instance methods', function() {
         var cls = function() {
           this.y = 1;

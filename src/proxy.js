@@ -170,14 +170,23 @@ module.exports = function proxyPolyfill() {
       this[prop] = value;
     };
 
-    // Clone direct properties (i.e., not part of a prototype).
-    const propertyNames = $Object.getOwnPropertyNames(target);
+    // Walk the prototype chain for all property definitions
+    let propertyInfo = $Object.getOwnPropertyNames(target).map(p=>({name: p, source: target}));
+    let currentProto = proto;
+    while (currentProto && currentProto !== $Object.prototype){
+        propertyInfo = propertyInfo.concat($Object.getOwnPropertyNames(currentProto)
+          .map(p=>({name: p, source: currentProto}))
+        );
+        currentProto = $Object.getPrototypeOf(currentProto);
+    }
     const propertyMap = {};
-    propertyNames.forEach(function(prop) {
-      if ((isMethod || isArray) && prop in proxy) {
+    propertyInfo.forEach(function(item) {
+      const prop = item.name;
+      const src = item.source;
+      if ((isMethod || isArray) && prop in proxy || propertyMap[prop]) {
         return;  // ignore properties already here, e.g. 'bind', 'prototype' etc
       }
-      const real = $Object.getOwnPropertyDescriptor(target, prop);
+      const real = $Object.getOwnPropertyDescriptor(src, prop);
       const desc = {
         enumerable: Boolean(real.enumerable),
         get: getter.bind(target, prop),
