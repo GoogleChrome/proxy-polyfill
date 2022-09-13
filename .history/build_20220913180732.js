@@ -14,39 +14,34 @@
  * the License.
  */
 
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const ClosureCompiler = require("google-closure-compiler").compiler;
+const ClosureCompiler = require('google-closure-compiler').compiler;
 
-// Closure Compiler.
 const closureCompiler = new ClosureCompiler({
-  js: path.resolve(__dirname, "./src/*.js"),
-  entry_point: path.resolve(__dirname, "./src/index.js"),
-  js_output_file: path.resolve(__dirname, "./proxy.min.js"),
-  language_in: "ECMASCRIPT6_STRICT",
-  language_out: "ECMASCRIPT5",
-  compilation_level: "ADVANCED_OPTIMIZATIONS",
-  warning_level: "VERBOSE",
+  js: path.resolve(__dirname, './src/*.js'),
+  entry_point: path.resolve(__dirname, './src/index.js'),
+  js_output_file: path.resolve(__dirname, './proxy.min.js'),
+  language_in: 'ECMASCRIPT6_STRICT',
+  language_out: 'ECMASCRIPT5',
+  compilation_level: 'ADVANCED_OPTIMIZATIONS',
+  warning_level: 'VERBOSE',
   process_common_js_modules: true,
-  output_wrapper: "(function(){%output%})();", // don't pollute global scope
+  output_wrapper: '(function(){%output%})();',  // don't pollute global scope
 });
 
 // FIXME(samthor): There's probably a better way to do this. Avoid Java on macOS.
-const checkNativeMac = path.join(
-  __dirname,
-  "node_modules/google-closure-compiler-osx/compiler"
-);
+const checkNativeMac = path.join(__dirname, 'node_modules/google-closure-compiler-osx/compiler');
 if (fs.existsSync(checkNativeMac)) {
   closureCompiler.JAR_PATH = undefined;
-  ClosureCompiler.prototype.javaPath =
-    "./node_modules/google-closure-compiler-osx/compiler";
+  ClosureCompiler.prototype.javaPath = './node_modules/google-closure-compiler-osx/compiler';
 }
 
 const compilerProcess = closureCompiler.run((code, stdout, stderr) => {
   if (stderr) {
-    console.error("err!", stderr);
+    console.error('err!', stderr);
     return;
   }
-  console.log("done!", stdout);
+  console.log('done!', stdout);
 });
