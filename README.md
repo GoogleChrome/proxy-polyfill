@@ -1,4 +1,5 @@
-[![Build](https://api.travis-ci.org/GoogleChrome/proxy-polyfill.svg?branch=master)](https://travis-ci.org/GoogleChrome/proxy-polyfill)
+*Please note that this polyfill is now in maintenance mode, as of Jan, 2023. We are not planning to add more features or enhancements.*
+__________
 
 This is a polyfill for the `Proxy` object, part of ES6.
 See the [MDN docs](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Proxy) or [Introducing ES2015 Proxies](https://developers.google.com/web/updates/2016/02/es2015-proxies) for more information on `Proxy` itself.
